@@ -3,21 +3,57 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>WASEET — لوحة تحكم المدير العام</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
+/* ══ FORCE FULLSCREEN ══ */
+*, *::before, *::after { box-sizing: border-box; }
+html {
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+body {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+  overflow: hidden !important;
+  display: flex !important;
+  position: fixed !important;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+#sidebar {
+  height: 100vh !important;
+  height: 100dvh !important;
+  flex-shrink: 0;
+}
+#main {
+  flex: 1 !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0;
+}
+#content {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  height: 0 !important;
+}
+
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --pri:#0b1420;--sec:#111d30;--surf:#16243a;--card:#1c2f48;
-  --acc:#00d4aa;--acc2:#ff6b35;--acc3:#7c3aed;--gold:#f59e0b;
-  --txt:#e8f4f8;--muted:#6b8fb0;--border:rgba(0,212,170,0.13);
-  --ok:#10b981;--err:#ef4444;--warn:#f59e0b;
-  --sb:256px;
+–pri:#0b1420;–sec:#111d30;–surf:#16243a;–card:#1c2f48;
+–acc:#00d4aa;–acc2:#ff6b35;–acc3:#7c3aed;–gold:#f59e0b;
+–txt:#e8f4f8;–muted:#6b8fb0;–border:rgba(0,212,170,0.13);
+–ok:#10b981;–err:#ef4444;–warn:#f59e0b;
+–sb:256px;
 }
-html,body{height:100%;overflow:hidden;}
-body{font-family:'Cairo',sans-serif;background:var(--pri);color:var(--txt);display:flex;}
+html,body{height:100%;width:100%;overflow:hidden;position:fixed;top:0;left:0;right:0;bottom:0;}
+body{font-family:‘Cairo’,sans-serif;background:var(–pri);color:var(–txt);display:flex;width:100%;height:100%;}
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:rgba(0,212,170,0.2);border-radius:4px;}
