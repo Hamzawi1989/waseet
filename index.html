@@ -400,6 +400,30 @@ box-shadow:-6px 0 30px rgba(0,0,0,0.7);
 #content{padding:8px 6px;}
 .sc{padding:10px;}
 }
+
+/* ══ MOBILE FULLSCREEN FIX ══ */
+@media screen and (max-width:768px){
+#sidebar{ display:none !important; }
+#sidebar.mobile-open{ display:flex !important; position:fixed; top:0; right:0; width:260px; height:100vh; z-index:9990; }
+#main{ margin-right:0 !important; width:100% !important; }
+.g2{ grid-template-columns:1fr !important; }
+.g3{ grid-template-columns:1fr 1fr !important; }
+.g22{ grid-template-columns:1fr !important; }
+.sg{ grid-template-columns:1fr 1fr !important; }
+.sw{ display:none !important; }
+#content{ padding:10px 8px !important; }
+.sv{ font-size:22px !important; }
+.sc{ padding:12px !important; }
+.topbar{ padding:0 10px !important; gap:8px !important; }
+.tt p{ display:none; }
+.bars{ height:70px !important; }
+.rg{ grid-template-columns:1fr 1fr !important; }
+}
+@media screen and (max-width:480px){
+.sg{ grid-template-columns:1fr 1fr !important; }
+.g3{ grid-template-columns:1fr !important; }
+.rg{ grid-template-columns:1fr !important; }
+}
 </style>
 
 </head>
@@ -1593,17 +1617,17 @@ function toggleSidebar(){
   const sb = document.getElementById('sidebar');
   const isMobile = window.innerWidth <= 768;
   if(isMobile){
-    const isOpen = sb.classList.contains('open');
+    const isOpen = sb.classList.contains('mobile-open');
     if(isOpen){
-      sb.classList.remove('open');
+      sb.classList.remove('mobile-open');
       const ov = document.getElementById('sbOverlay');
       if(ov) ov.remove();
     } else {
-      sb.classList.add('open');
+      sb.classList.add('mobile-open');
       const overlay = document.createElement('div');
       overlay.id = 'sbOverlay';
-      overlay.style.cssText = 'position:fixed;inset:0;z-index:9989;background:rgba(0,0,0,0.55);backdrop-filter:blur(2px);';
-      overlay.onclick = ()=>{ sb.classList.remove('open'); overlay.remove(); };
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9989;background:rgba(0,0,0,0.6);';
+      overlay.onclick = ()=>{ sb.classList.remove('mobile-open'); overlay.remove(); };
       document.body.appendChild(overlay);
     }
   } else {
@@ -1668,10 +1692,8 @@ function startClock(){
 //  INIT
 // ════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async ()=>{
-  // On mobile, sidebar starts hidden (drawer style)
-  if(window.innerWidth <= 768){
-    // sidebar already hidden via CSS right:-260px
-  } else if(window.innerWidth <= 1024){
+  // Responsive sidebar init
+  if(window.innerWidth <= 1024){
     document.getElementById('sidebar').classList.add('collapsed');
   }
   // close overlays on bg click
