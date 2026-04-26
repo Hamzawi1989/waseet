@@ -1833,17 +1833,41 @@ async function payAgent(id){
 //  PRICING
 // ════════════════════════════════════════
 function renderPricingPage(){
-  const el=document.getElementById('pricingT');
-  if(!CACHE.pricing.length){el.innerHTML='<div class="empty"><div>🗺️</div><p>لا توجد أسعار</p></div>';return;}
-  el.innerHTML=CACHE.pricing.map((p,i)=>`
-    <div class="ar">
-      <span style="font-weight:600">📍 ${p.area}</span>
-      <div style="display:flex;align-items:center;gap:9px">
-        <input class="pi" id="pr-${p.id}" value="${p.price}" type="number" min="0">
-        <span style="font-size:12px;color:var(--muted)">د.ل</span>
+  const el = document.getElementById('pricingT');
+  if(!el) return;
+  
+  let areas = CACHE.pricing;
+  if(window._pricingFilter) areas = areas.filter(p=>p.city===window._pricingFilter);
+  
+  // Update header
+  const headerEl = document.querySelector('#page-pricing .ph h3');
+  if(headerEl) headerEl.innerHTML = window._pricingFilter 
+    ? `🗺️ مناطق ${window._pricingFilter} <button onclick="window._pricingFilter='';renderPricingPage()" style="background:rgba(239,68,68,0.1);color:var(--err);border:none;padding:2px 8px;border-radius:6px;font-size:10px;cursor:pointer;font-family:'Cairo',sans-serif;margin-right:6px">✕ الكل</button>` 
+    : '🗺️ أسعار التوصيل';
+  
+  if(!areas.length){
+    el.innerHTML = `<div class="empty"><div>🗺️</div><p>${window._pricingFilter?'لا توجد مناطق في '+window._pricingFilter:'لا توجد مناطق — أضف منطقة الآن'}</p></div>`;
+  } else {
+    el.innerHTML = areas.map(p=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.03)">
+        <div>
+          <div style="font-weight:600;font-size:12px">📍 ${p.area}</div>
+          ${p.city?`<div style="font-size:10px;color:var(--txt3)">🏙️ ${p.city}</div>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:7px">
+          <input value="${p.price}" type="number" min="0" 
+            onchange="editAreaPrice('${p.id}',this.value)"
+            onfocus="this.style.borderColor='var(--gold)'"
+            onblur="this.style.borderColor='var(--border)'"
+            style="width:65px;text-align:center;background:var(--bg3);border:1px solid var(--border);color:var(--gold);padding:5px 6px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:12px;outline:none;transition:border-color .2s">
+          <span style="font-size:11px;color:var(--txt3)">د.ل</span>
+          <div class="act r" onclick="deleteArea('${p.id}')" title="حذف">🗑️</div>
+        </div>
       </div>
-    </div>
-  `).join('');
+    `).join('');
+  }
+  
+  if(typeof renderCitiesTable === 'function') renderCitiesTable();
 }
 
 async function savePricing(){
@@ -2023,15 +2047,7 @@ function onSearch(){
 // ════════════════════════════════════════
 //  MODALS
 // ════════════════════════════════════════
-function openModal(id){
-  if(id==='newOrder'){
-    const sel=document.getElementById('oArea');
-    sel.innerHTML='<option value="">اختر...</option>'+CACHE.pricing.map(p=>`<option value="${p.id}">${p.area} — ${p.price} د.ل</option>`).join('');
-    const ms=document.getElementById('oMerch');
-    ms.innerHTML='<option value="">اختر...</option>'+CACHE.merchants.filter(m=>m.status==='active').map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
-  }
-  document.getElementById('ov-'+id).classList.add('show');
-}
+
 function closeModal(id){ document.getElementById('ov-'+id).classList.remove('show'); }
 
 // ════════════════════════════════════════
@@ -2215,41 +2231,6 @@ function filterPricingByCity(city){
   renderPricingPage();
 }
 
-function renderPricingPage(){
-  const el = document.getElementById('pricingT');
-  if(!el) return;
-  
-  let areas = CACHE.pricing;
-  if(_pricingFilter) areas = areas.filter(p=>p.city===_pricingFilter);
-  
-  // Header with filter indicator
-  const headerEl = document.querySelector('#page-pricing .ph h3');
-  if(headerEl) headerEl.innerHTML = _pricingFilter ? `🗺️ مناطق ${_pricingFilter} <button onclick="_pricingFilter='';renderPricingPage()" style="background:rgba(239,68,68,0.1);color:var(--err);border:none;padding:2px 8px;border-radius:6px;font-size:10px;cursor:pointer;font-family:'Cairo',sans-serif;margin-right:6px">✕ كل المناطق</button>` : '🗺️ أسعار التوصيل';
-  
-  if(!areas.length){
-    el.innerHTML = '<div class="empty"><div>🗺️</div><p>' + (_pricingFilter?'لا توجد مناطق في '+_pricingFilter:'لا توجد مناطق — أضف منطقة') + '</p></div>';
-  } else {
-    el.innerHTML = areas.map(p=>`
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.03)">
-        <div>
-          <div style="font-weight:600;font-size:12px">📍 ${p.area}</div>
-          ${p.city?`<div style="font-size:10px;color:var(--txt3)">🏙️ ${p.city}</div>`:''}
-        </div>
-        <div style="display:flex;align-items:center;gap:7px">
-          <input class="pi" value="${p.price}" type="number" min="0" 
-            onchange="editAreaPrice('${p.id}',this.value)"
-            style="width:65px;text-align:center;background:var(--bg3);border:1px solid var(--border);color:var(--gold);padding:5px 6px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:12px;outline:none;transition:border-color .2s"
-            onfocus="this.style.borderColor='var(--gold)'"
-            onblur="this.style.borderColor='var(--border)'">
-          <span style="font-size:11px;color:var(--txt3)">د.ل</span>
-          <div class="act r" onclick="deleteArea('${p.id}')" title="حذف">🗑️</div>
-        </div>
-      </div>
-    `).join('');
-  }
-  
-  if(typeof renderCitiesTable === 'function') renderCitiesTable();
-}
 
 async function savePricing(){
   toast('✅ تم حفظ الأسعار تلقائياً عند التعديل', 'ok');
