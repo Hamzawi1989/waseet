@@ -512,20 +512,25 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
 
 <!-- ══ PRICING ══ -->
 <div id="page-pricing" class="page">
+  <!-- اختيار الفرع -->
+  <div style="background:var(--card);border:1px solid var(--goldborder);border-radius:13px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span style="font-size:13px;font-weight:700;color:var(--gold)">🏢 الفرع:</span>
+    <select id="pricingBranch" onchange="onPricingBranchChange()" style="background:var(--bg3);border:1px solid var(--goldborder);color:var(--txt);padding:7px 14px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:13px;outline:none;cursor:pointer;flex:1;max-width:300px">
+      <option value="">🌐 أسعار عامة (كل الفروع)</option>
+    </select>
+    <span id="pricingBranchInfo" style="font-size:11px;color:var(--txt3)">عرض الأسعار العامة المشتركة بين الفروع</span>
+    <button onclick="copyPricingFromGlobal()" id="copyPricingBtn" style="display:none;background:var(--goldbg);color:var(--gold);border:1px solid var(--goldborder);padding:5px 12px;border-radius:8px;font-size:11px;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:600">📋 نسخ الأسعار العامة</button>
+  </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
     <div class="pn">
-      <div class="ph"><h3>🗺️ أسعار التوصيل</h3>
-        <div class="ph-r">
-          <button class="pb" onclick="savePricing()">💾 حفظ</button>
-          <button class="pb warn" onclick="openModal('newArea')">➕ منطقة</button>
-        </div>
+      <div class="ph">
+        <h3 id="pricingHeader">🗺️ أسعار التوصيل</h3>
+        <button class="pb warn" onclick="openModal('newArea')">➕ منطقة جديدة</button>
       </div>
       <div id="pricingT"></div>
     </div>
     <div class="pn">
-      <div class="ph"><h3>🏙️ إدارة المدن</h3>
-        <button class="pb" onclick="openModal('newCity')">➕ مدينة</button>
-      </div>
+      <div class="ph"><h3>🏙️ المدن</h3><button class="pb" onclick="openModal('newCity')">➕ مدينة</button></div>
       <div id="citiesT"></div>
     </div>
   </div>
@@ -892,7 +897,8 @@ async function loadBranches(){
     const {data}=await SB.from('branches').select('*').order('created_at',{ascending:false});
     window._branches=data||[];
   }catch(e){window._branches=window._branches||[];}
-  populateBranchSelects?.();
+  populateBranchSelects();
+  populatePricingBranchSelect();
 }
 
 function populateBranchSelects(){
@@ -1477,18 +1483,7 @@ function onMerchantChange(){
   } else if(info){ info.style.display='none'; }
 }
 
-function onCityChange(){
-  const city=document.getElementById('oCity').value;
-  const areas=CACHE.pricing.filter(p=>!p.city||p.city===city||p.city==='');
-  const areaEl=document.getElementById('oArea');
-  if(!areaEl) return;
-  if(!areas.length){
-    areaEl.innerHTML='<option value="">لا توجد مناطق مسجلة لهذه المدينة</option>';
-  } else {
-    areaEl.innerHTML='<option value="">اختر المنطقة...</option>'+areas.map(p=>`<option value="${p.id}" data-price="${p.price}">${p.area} — ${p.price} د.ل</option>`).join('');
-  }
-  calcTotal();
-}
+
 
 function onAreaChange(){
   const areaEl=document.getElementById('oArea');
@@ -1840,43 +1835,7 @@ async function payAgent(id){
 // ════════════════════════════════════════
 //  PRICING
 // ════════════════════════════════════════
-function renderPricingPage(){
-  const el = document.getElementById('pricingT');
-  if(!el) return;
-  
-  let areas = CACHE.pricing;
-  if(window._pricingFilter) areas = areas.filter(p=>p.city===window._pricingFilter);
-  
-  // Update header
-  const headerEl = document.querySelector('#page-pricing .ph h3');
-  if(headerEl) headerEl.innerHTML = window._pricingFilter 
-    ? `🗺️ مناطق ${window._pricingFilter} <button onclick="window._pricingFilter='';renderPricingPage()" style="background:rgba(239,68,68,0.1);color:var(--err);border:none;padding:2px 8px;border-radius:6px;font-size:10px;cursor:pointer;font-family:'Cairo',sans-serif;margin-right:6px">✕ الكل</button>` 
-    : '🗺️ أسعار التوصيل';
-  
-  if(!areas.length){
-    el.innerHTML = `<div class="empty"><div>🗺️</div><p>${window._pricingFilter?'لا توجد مناطق في '+window._pricingFilter:'لا توجد مناطق — أضف منطقة الآن'}</p></div>`;
-  } else {
-    el.innerHTML = areas.map(p=>`
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.03)">
-        <div>
-          <div style="font-weight:600;font-size:12px">📍 ${p.area}</div>
-          ${p.city?`<div style="font-size:10px;color:var(--txt3)">🏙️ ${p.city}</div>`:''}
-        </div>
-        <div style="display:flex;align-items:center;gap:7px">
-          <input value="${p.price}" type="number" min="0" 
-            onchange="editAreaPrice('${p.id}',this.value)"
-            onfocus="this.style.borderColor='var(--gold)'"
-            onblur="this.style.borderColor='var(--border)'"
-            style="width:65px;text-align:center;background:var(--bg3);border:1px solid var(--border);color:var(--gold);padding:5px 6px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:12px;outline:none;transition:border-color .2s">
-          <span style="font-size:11px;color:var(--txt3)">د.ل</span>
-          <div class="act r" onclick="deleteArea('${p.id}')" title="حذف">🗑️</div>
-        </div>
-      </div>
-    `).join('');
-  }
-  
-  if(typeof renderCitiesTable === 'function') renderCitiesTable();
-}
+
 
 async function savePricing(){
   let updated=0;
@@ -2014,9 +1973,10 @@ function onPageOpen(pid){
   if(pid==='agents') renderAgentsPage();
   if(pid==='finance') renderFinancePage();
   if(pid==='pricing'){
-    _pricingFilter='';
+    window._pricingFilter='';
+    _currentPricingBranch='';
+    populatePricingBranchSelect();
     renderPricingPage();
-    renderCitiesTable();
   }
   if(pid==='notifications') renderNotifications();
   if(pid==='reports') renderReportsPage();
@@ -2241,6 +2201,185 @@ function filterPricingByCity(city){
 
 
 
+
+
+// ════════════════════════════════════════
+//  BRANCH PRICING SYSTEM
+// ════════════════════════════════════════
+let _currentPricingBranch = ''; // '' = global
+
+function onPricingBranchChange(){
+  const sel = document.getElementById('pricingBranch');
+  _currentPricingBranch = sel?.value || '';
+  const branchName = sel?.options[sel.selectedIndex]?.text || 'أسعار عامة';
+  const info = document.getElementById('pricingBranchInfo');
+  const copyBtn = document.getElementById('copyPricingBtn');
+  const header = document.getElementById('pricingHeader');
+  
+  if(_currentPricingBranch){
+    if(info) info.textContent = `عرض أسعار التوصيل الخاصة بهذا الفرع`;
+    if(copyBtn) copyBtn.style.display = 'inline-flex';
+    if(header) header.innerHTML = `🗺️ أسعار ${branchName}`;
+  } else {
+    if(info) info.textContent = 'عرض الأسعار العامة المشتركة بين الفروع';
+    if(copyBtn) copyBtn.style.display = 'none';
+    if(header) header.innerHTML = '🗺️ أسعار التوصيل العامة';
+  }
+  
+  window._pricingFilter = '';
+  renderPricingPage();
+}
+
+// Get pricing for current context (branch or global)
+function getCurrentPricing(){
+  if(_currentPricingBranch){
+    // Branch-specific: filter by branch_id
+    const branchAreas = CACHE.pricing.filter(p => p.branch_id === _currentPricingBranch);
+    // If no branch-specific areas, show empty (not global)
+    return branchAreas;
+  }
+  // Global: no branch_id or branch_id is null/empty
+  return CACHE.pricing.filter(p => !p.branch_id || p.branch_id === '');
+}
+
+// Copy global pricing to current branch
+async function copyPricingFromGlobal(){
+  if(!_currentPricingBranch){ toast('⚠️ اختر فرعاً أولاً','warn'); return; }
+  const globalPricing = CACHE.pricing.filter(p => !p.branch_id || p.branch_id === '');
+  if(!globalPricing.length){ toast('⚠️ لا توجد أسعار عامة للنسخ','warn'); return; }
+  
+  cnf('📋','نسخ الأسعار العامة',`سيتم نسخ ${globalPricing.length} منطقة من الأسعار العامة لهذا الفرع`, async()=>{
+    const inserts = globalPricing.map(p => ({
+      area: p.area, price: p.price, city: p.city||'',
+      branch_id: _currentPricingBranch
+    }));
+    const {data, error} = await SB.from('pricing').insert(inserts).select();
+    if(error){ toast('❌ '+error.message,'err'); return; }
+    CACHE.pricing = [...CACHE.pricing, ...data];
+    renderPricingPage();
+    toast(`✅ تم نسخ ${data.length} منطقة للفرع!`,'ok');
+  });
+}
+
+// Override renderPricingPage to be branch-aware
+function renderPricingPage(){
+  const el = document.getElementById('pricingT');
+  if(!el) return;
+  
+  let areas = getCurrentPricing();
+  if(window._pricingFilter) areas = areas.filter(p=>p.city===window._pricingFilter);
+  
+  // Update filter header
+  const headerEl = document.getElementById('pricingHeader');
+  if(headerEl && window._pricingFilter){
+    const branchSel = document.getElementById('pricingBranch');
+    const bName = branchSel?.options[branchSel.selectedIndex]?.text || '';
+    headerEl.innerHTML = `🗺️ مناطق ${window._pricingFilter}${bName?' — '+bName:''} <button onclick="window._pricingFilter='';renderPricingPage()" style="background:rgba(239,68,68,0.1);color:var(--err);border:none;padding:2px 8px;border-radius:6px;font-size:10px;cursor:pointer;font-family:'Cairo',sans-serif;margin-right:6px">✕</button>`;
+  }
+  
+  if(!areas.length){
+    const msg = _currentPricingBranch 
+      ? 'لا توجد أسعار خاصة بهذا الفرع — اضغط "نسخ الأسعار العامة" للبدء'
+      : 'لا توجد أسعار عامة — أضف منطقة الآن';
+    el.innerHTML = `<div class="empty"><div>🗺️</div><p>${window._pricingFilter?'لا توجد مناطق في '+window._pricingFilter:msg}</p></div>`;
+  } else {
+    el.innerHTML = areas.map(p=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.03)">
+        <div>
+          <div style="font-weight:600;font-size:12px">📍 ${p.area}</div>
+          ${p.city?`<div style="font-size:10px;color:var(--txt3)">🏙️ ${p.city}</div>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:7px">
+          <input value="${p.price}" type="number" min="0"
+            onchange="editAreaPrice('${p.id}',this.value)"
+            onfocus="this.style.borderColor='var(--gold)'"
+            onblur="this.style.borderColor='var(--border)'"
+            style="width:65px;text-align:center;background:var(--bg3);border:1px solid var(--border);color:var(--gold);padding:5px 6px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:12px;outline:none;transition:border-color .2s">
+          <span style="font-size:11px;color:var(--txt3)">د.ل</span>
+          <div class="act r" onclick="deleteArea('${p.id}')" title="حذف">🗑️</div>
+        </div>
+      </div>
+    `).join('');
+  }
+  
+  if(typeof renderCitiesTable === 'function') renderCitiesTable();
+}
+
+// Override submitArea to include branch_id
+const _origSubmitArea = submitArea;
+submitArea = async function(){
+  const name = document.getElementById('areaName')?.value?.trim();
+  const price = +(document.getElementById('areaPrice')?.value || 25);
+  const city = document.getElementById('areaCity')?.value || '';
+  
+  if(!name){ toast('⚠️ أدخل اسم المنطقة','warn'); return; }
+  if(!city){ toast('⚠️ اختر المدينة أولاً','warn'); return; }
+  
+  const newArea = {
+    area: name, price, city,
+    branch_id: _currentPricingBranch || null
+  };
+  
+  const {data, error} = await SB.from('pricing').insert(newArea).select().single();
+  if(error){ toast('❌ '+error.message,'err'); return; }
+  
+  CACHE.pricing.push(data);
+  renderPricingPage();
+  closeModal('newArea');
+  toast(`✅ تمت إضافة المنطقة "${name}"${_currentPricingBranch?' للفرع':' (عامة)'}!`, 'ok');
+  document.getElementById('areaName').value = '';
+  document.getElementById('areaPrice').value = '25';
+};
+
+// onCityChange for order form - use branch pricing if available
+function onCityChange(){
+  const city = document.getElementById('oCity')?.value;
+  const branchId = document.getElementById('oBranch')?.value;
+  
+  // Get areas: branch-specific first, then global
+  let areas = [];
+  if(branchId){
+    areas = CACHE.pricing.filter(p => p.city===city && p.branch_id===branchId);
+    if(!areas.length){
+      // Fall back to global
+      areas = CACHE.pricing.filter(p => p.city===city && (!p.branch_id||p.branch_id===''));
+    }
+  } else {
+    areas = CACHE.pricing.filter(p => p.city===city && (!p.branch_id||p.branch_id===''));
+  }
+  
+  const areaEl = document.getElementById('oArea');
+  if(!areaEl) return;
+  if(!areas.length){
+    areaEl.innerHTML = '<option value="">لا توجد مناطق مسجلة لهذه المدينة</option>';
+  } else {
+    areaEl.innerHTML = '<option value="">اختر المنطقة...</option>' +
+      areas.map(p=>`<option value="${p.id}" data-price="${p.price}">${p.area} — ${p.price} د.ل</option>`).join('');
+  }
+  calcTotal();
+}
+
+// Populate branch select in pricing page
+function populatePricingBranchSelect(){
+  const sel = document.getElementById('pricingBranch');
+  if(!sel) return;
+  const branches = window._branches||[];
+  sel.innerHTML = '<option value="">🌐 أسعار عامة (كل الفروع)</option>' +
+    branches.map(b=>`<option value="${b.id}">🏢 ${b.name} — ${b.city||''}</option>`).join('');
+  sel.value = _currentPricingBranch;
+}
+
+
+function goToBranchPricing(branchId){
+  // Navigate to pricing page and select this branch
+  nav(document.querySelector('[data-page=pricing]'));
+  setTimeout(()=>{
+    _currentPricingBranch = branchId;
+    const sel = document.getElementById('pricingBranch');
+    if(sel) sel.value = branchId;
+    onPricingBranchChange();
+  }, 100);
+}
 
 </script>
 
