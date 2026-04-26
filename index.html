@@ -887,9 +887,43 @@ function setupRealtime(){
 // ════════════════════════════════════════
 let CACHE = { orders:[], merchants:[], agents:[], pricing:[], notifications:[] };
 
+async function loadBranches(){
+  try{
+    const {data}=await SB.from('branches').select('*').order('created_at',{ascending:false});
+    window._branches=data||[];
+  }catch(e){window._branches=window._branches||[];}
+  populateBranchSelects?.();
+}
+
 async function refreshAll(){
-  await Promise.all([loadOrdersData(), loadMerchantsData(), loadAgentsData(), loadPricingData(), loadNotifications()]);
+  await Promise.all([
+    loadOrdersData(), loadMerchantsData(), loadAgentsData(),
+    loadPricingData(), loadNotifications(),
+    loadBranches(), fetchCities()
+  ]);
   renderDashboard();
+}
+
+async function fetchCities(){
+  try {
+    const {data, error} = await SB.from('cities').select('*').order('name');
+    if(!error && data) window._cities = data;
+    else if(!window._cities) window._cities = [];
+  } catch(e){
+    if(!window._cities) window._cities = [];
+  }
+  // Update all dropdowns
+  refreshCityDropdowns();
+}
+
+function refreshCityDropdowns(){
+  const cities = window._cities || [];
+  const opts = '<option value="">اختر المدينة...</option>' +
+    cities.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+  ['brCity','areaCity','mCity','agCity','oCity'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = opts;
+  });
 }
 
 async function loadOrdersData(){
@@ -1950,6 +1984,7 @@ function onPageOpen(pid){
   if(pid==='pricing'){
     _pricingFilter='';
     renderPricingPage();
+    renderCitiesTable();
   }
   if(pid==='notifications') renderNotifications();
   if(pid==='reports') renderReportsPage();
@@ -2077,27 +2112,31 @@ async function refreshDashboard(){
 // ════════════════════════════════════════
 
 async function submitCity(){
-  const name = document.getElementById('cityName')?.value?.trim();
+  const nameEl = document.getElementById('cityName');
+  const name = nameEl?.value?.trim();
   const region = document.getElementById('cityRegion')?.value || 'غرب ليبيا';
   if(!name){ toast('⚠️ أدخل اسم المدينة','warn'); return; }
   
+  let newCity = {id: Date.now().toString(), name, region};
+  
   try {
     const {data, error} = await SB.from('cities').insert({name, region}).select().single();
-    if(error) throw error;
-    if(!window._cities) window._cities = [];
-    window._cities.push(data);
-    toast('✅ تمت إضافة المدينة "' + name + '"!', 'ok');
-  } catch(e) {
-    // Add locally if table doesn't exist
-    if(!window._cities) window._cities = [];
-    window._cities.push({id: Date.now().toString(), name, region});
-    toast('✅ تمت إضافة المدينة "' + name + '"!', 'ok');
-  }
+    if(!error && data) newCity = data;
+  } catch(e){}
   
-  populateCitySelects();
-  renderPricingPage();
+  if(!window._cities) window._cities = [];
+  window._cities.push(newCity);
+  
+  // Update UI immediately
+  if(nameEl) nameEl.value = '';
   closeModal('newCity');
-  document.getElementById('cityName').value = '';
+  
+  // Refresh UI immediately
+  refreshCityDropdowns();
+  renderCitiesTable();
+  renderPricingPage();
+  
+  toast('✅ تمت إضافة المدينة "' + name + '"!', 'ok');
 }
 
 async function submitArea(){
@@ -2209,7 +2248,7 @@ function renderPricingPage(){
     `).join('');
   }
   
-  renderCitiesTable();
+  if(typeof renderCitiesTable === 'function') renderCitiesTable();
 }
 
 async function savePricing(){
