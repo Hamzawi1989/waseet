@@ -271,6 +271,10 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
 .status-flow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
 .status-step{display:flex;align-items:center;gap:4px;font-size:11px;color:var(–txt3);}
 .status-step.active-step{color:var(–gold);font-weight:700;}
+
+.opt-label{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;font-weight:500;background:var(–bg2);border:1px solid var(–border);border-radius:9px;padding:9px 12px;transition:all .18s;user-select:none;}
+.opt-label:hover{background:var(–goldbg);border-color:var(–goldborder);}
+.opt-label.checked{background:var(–goldbg);border-color:var(–gold);color:var(–gold);}
 </style>
 
 </head>
@@ -597,46 +601,48 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
 <!-- MODALS -->
 
 <div class="ov" id="ov-newOrder">
-  <div class="modal" style="width:580px;max-width:96vw">
+  <div class="modal" style="width:600px;max-width:97vw">
     <button class="mc" onclick="closeModal('newOrder')">✕</button>
     <h2>📦 شحنة جديدة</h2>
 
 ```
 <!-- رقم الشحنة -->
-<div style="background:var(--goldbg);border:1px solid var(--goldborder);border-radius:11px;padding:11px 15px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
-  <span style="font-size:22px">🔢</span>
-  <div><div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px">رقم الشحنة التالي</div>
-  <div id="nextOrderNum" style="font-family:'Tajawal',sans-serif;font-weight:800;font-size:22px;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">—</div></div>
+<div style="background:linear-gradient(135deg,rgba(212,160,23,0.12),rgba(212,160,23,0.06));border:1px solid var(--goldborder);border-radius:11px;padding:11px 15px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
+  <span style="font-size:24px">🔢</span>
+  <div>
+    <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">رقم الشحنة التالي</div>
+    <div id="nextOrderNum" style="font-family:'Tajawal',sans-serif;font-weight:800;font-size:24px;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">—</div>
+  </div>
 </div>
 
-<!-- اختيار التاجر -->
-<div style="background:var(--bg3);border:1px solid var(--border);border-radius:11px;padding:14px;margin-bottom:12px">
-  <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px">🏪 معلومات التاجر</div>
+<!-- ① اختيار التاجر -->
+<div style="background:var(--bg3);border:1px solid var(--border);border-radius:11px;padding:13px;margin-bottom:10px">
+  <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:5px">🏪 بيانات التاجر</div>
   <div class="fg">
     <label class="fl">اختر التاجر *</label>
     <select class="fi2" id="oMerch" onchange="onMerchantChange()">
       <option value="">ابحث أو اختر التاجر...</option>
     </select>
   </div>
-  <div id="merchantInfo" style="display:none;background:var(--bg2);border:1px solid var(--goldborder);border-radius:9px;padding:10px;margin-top:8px">
+  <div id="merchantInfo" style="display:none;background:var(--bg2);border:1px solid var(--goldborder);border-radius:9px;padding:10px;margin-top:6px">
     <div style="display:flex;align-items:center;gap:10px">
-      <div style="width:34px;height:34px;border-radius:50%;background:var(--goldbg);border:1px solid var(--goldborder);display:flex;align-items:center;justify-content:center;font-size:14px">🏪</div>
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--goldbg);border:1px solid var(--goldborder);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🏪</div>
       <div>
-        <div id="mInfoName" style="font-weight:700;font-size:13px"></div>
-        <div id="mInfoPhone" style="font-size:11px;color:var(--txt3)"></div>
+        <div id="mInfoName" style="font-weight:700;font-size:13px;color:var(--txt)"></div>
+        <div id="mInfoPhone" style="font-size:11px;color:var(--gold);margin-top:1px"></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- معلومات المستلم -->
-<div style="background:var(--bg3);border:1px solid var(--border);border-radius:11px;padding:14px;margin-bottom:12px">
-  <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:10px">📍 معلومات المستلم</div>
+<!-- ② بيانات المستلم -->
+<div style="background:var(--bg3);border:1px solid var(--border);border-radius:11px;padding:13px;margin-bottom:10px">
+  <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:10px">📍 بيانات المستلم</div>
   <div class="fg2">
     <div class="fg"><label class="fl">اسم المستلم *</label><input class="fi2" id="oRec" placeholder="الاسم الكامل"></div>
     <div class="fg"><label class="fl">هاتف المستلم *</label><input class="fi2" id="oPh" placeholder="+218 91 ..."></div>
   </div>
-  <div class="fg"><label class="fl">هاتف احتياطي</label><input class="fi2" id="oPh2" placeholder="اختياري"></div>
+  <div class="fg"><label class="fl">هاتف احتياطي (اختياري)</label><input class="fi2" id="oPh2" placeholder="+218 92 ..."></div>
   <div class="fg2">
     <div class="fg">
       <label class="fl">المدينة *</label>
@@ -651,70 +657,67 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
       </select>
     </div>
   </div>
-  <div class="fg"><label class="fl">عنوان التفصيلي *</label><input class="fi2" id="oAddr" placeholder="الشارع، المبنى، التفاصيل"></div>
+  <div class="fg"><label class="fl">العنوان التفصيلي *</label><input class="fi2" id="oAddr" placeholder="الشارع، المبنى، أقرب معلم..."></div>
 </div>
 
-<!-- تفاصيل الشحنة -->
-<div style="background:var(--bg3);border:1px solid var(--border);border-radius:11px;padding:14px;margin-bottom:12px">
+<!-- ③ تفاصيل الشحنة -->
+<div style="background:var(--bg3);border:1px solid var(--border);border-radius:11px;padding:13px;margin-bottom:10px">
   <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:10px">📦 تفاصيل الشحنة</div>
   <div class="fg2">
     <div class="fg"><label class="fl">محتوى الشحنة *</label><input class="fi2" id="oContent" placeholder="وصف المحتوى..."></div>
     <div class="fg"><label class="fl">الكمية</label><input class="fi2" id="oQty" type="number" value="1" min="1"></div>
   </div>
-  <div class="fg2">
-    <div class="fg"><label class="fl">سعر المنتج (د.ل)</label><input class="fi2" id="oProductPrice" type="number" value="0" min="0" oninput="calcTotal()"></div>
-    <div class="fg"><label class="fl">رسوم التوصيل (د.ل)</label><input class="fi2" id="oFee" type="number" value="25" min="0" readonly style="background:rgba(212,160,23,0.05);color:var(--gold)"></div>
+  <!-- الأسعار -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+    <div>
+      <label class="fl">سعر المنتج (د.ل)</label>
+      <input class="fi2" id="oProductPrice" type="number" value="0" min="0" oninput="calcTotal()" placeholder="0">
+    </div>
+    <div>
+      <label class="fl">رسوم التوصيل (د.ل)</label>
+      <input class="fi2" id="oFee" type="number" value="25" min="0" oninput="calcTotal()" placeholder="25">
+      <div style="font-size:10px;color:var(--txt3);margin-top:3px">يمكن تعديله يدوياً</div>
+    </div>
+  </div>
+  <!-- الإجمالي -->
+  <div style="background:var(--bg2);border:1px solid var(--goldborder);border-radius:9px;padding:10px;margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+      <span style="font-size:11px;color:var(--txt3)">سعر المنتج</span>
+      <span id="totProduct" style="font-size:11px;color:var(--txt2)">0 د.ل</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+      <span style="font-size:11px;color:var(--txt3)">رسوم التوصيل</span>
+      <span id="totFee" style="font-size:11px;color:var(--txt2)">25 د.ل</span>
+    </div>
+    <div style="border-top:1px solid var(--goldborder);padding-top:7px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;font-weight:700;color:var(--txt)">الإجمالي</span>
+      <span id="oTotal" style="font-family:'Tajawal',sans-serif;font-weight:800;font-size:20px;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">25 د.ل</span>
+    </div>
   </div>
   <!-- التوصيل على حساب -->
   <div class="fg">
-    <label class="fl">التوصيل على حساب</label>
-    <div style="display:flex;gap:10px;margin-top:4px">
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;flex:1;background:var(--bg2);border:1px solid var(--goldborder);border-radius:9px;padding:9px 12px">
-        <input type="radio" name="feeOn" value="recipient" checked style="accent-color:var(--gold)"> المستلم
+    <label class="fl">رسوم التوصيل على حساب</label>
+    <div style="display:flex;gap:9px;margin-top:4px">
+      <label style="flex:1;display:flex;align-items:center;gap:7px;cursor:pointer;background:rgba(212,160,23,0.1);border:1px solid var(--goldborder);border-radius:9px;padding:9px 12px;font-size:12px;font-weight:600;color:var(--gold)">
+        <input type="radio" name="feeOn" id="feeRecipient" value="recipient" checked style="accent-color:var(--gold)"> 👤 المستلم (افتراضي)
       </label>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:9px 12px">
-        <input type="radio" name="feeOn" value="merchant" style="accent-color:var(--gold)"> التاجر
+      <label style="flex:1;display:flex;align-items:center;gap:7px;cursor:pointer;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:9px 12px;font-size:12px;color:var(--txt2)" id="feeOnMerchantLabel">
+        <input type="radio" name="feeOn" id="feeMerchant" value="merchant" style="accent-color:var(--gold)"> 🏪 التاجر
       </label>
     </div>
   </div>
-  <div class="fg"><label class="fl">ملاحظة</label><input class="fi2" id="oNotes" placeholder="ملاحظات للمندوب..."></div>
+  <div class="fg"><label class="fl">ملاحظة للمندوب</label><input class="fi2" id="oNotes" placeholder="ملاحظات خاصة..."></div>
 </div>
 
-<!-- خيارات إضافية -->
-<div style="background:var(--bg3);border:1px solid var(--border);border-radius:11px;padding:14px;margin-bottom:12px">
+<!-- ④ خيارات إضافية -->
+<div style="background:var(--bg3);border:1px solid var(--border);border-radius:11px;padding:13px;margin-bottom:14px">
   <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:10px">⚙️ خيارات إضافية</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-    <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:9px 12px;transition:all .2s" onclick="this.classList.toggle('active-opt')">
-      <input type="checkbox" id="optFragile" style="accent-color:var(--gold)"> 🥚 قابل للكسر
-    </label>
-    <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:9px 12px" onclick="this.classList.toggle('active-opt')">
-      <input type="checkbox" id="optHeat" style="accent-color:var(--gold)"> 🌡️ لا يتحمل الحرارة
-    </label>
-    <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:9px 12px" onclick="this.classList.toggle('active-opt')">
-      <input type="checkbox" id="optNoOpen" style="accent-color:var(--gold)"> 🔒 لا يُسمح بفتحه
-    </label>
-    <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:9px 12px" onclick="this.classList.toggle('active-opt')">
-      <input type="checkbox" id="optOpen" style="accent-color:var(--gold)"> 🔓 يُسمح بفتحه
-    </label>
-    <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:9px 12px" onclick="this.classList.toggle('active-opt')">
-      <input type="checkbox" id="optMeasure" style="accent-color:var(--gold)"> 📏 مسموح القياس
-    </label>
-  </div>
-</div>
-
-<!-- الإجمالي -->
-<div style="background:linear-gradient(135deg,rgba(212,160,23,0.1),rgba(212,160,23,0.05));border:1px solid var(--goldborder);border-radius:11px;padding:13px 16px;margin-bottom:14px">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-    <span style="font-size:12px;color:var(--txt3)">سعر المنتج</span>
-    <span id="totProduct" style="font-size:12px;color:var(--txt2)">0 د.ل</span>
-  </div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-    <span style="font-size:12px;color:var(--txt3)">رسوم التوصيل</span>
-    <span id="totFee" style="font-size:12px;color:var(--txt2)">25 د.ل</span>
-  </div>
-  <div style="border-top:1px solid var(--goldborder);padding-top:8px;display:flex;justify-content:space-between;align-items:center">
-    <span style="font-size:13px;font-weight:700;color:var(--txt)">الإجمالي</span>
-    <span id="oTotal" style="font-family:'Tajawal',sans-serif;font-weight:800;font-size:20px;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">25 د.ل</span>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+    <label class="opt-label" onclick="toggleOpt(this)"><input type="checkbox" id="optFragile" style="accent-color:var(--gold)"> 🥚 قابل للكسر</label>
+    <label class="opt-label" onclick="toggleOpt(this)"><input type="checkbox" id="optHeat" style="accent-color:var(--gold)"> 🌡️ لا يتحمل الحرارة</label>
+    <label class="opt-label" onclick="toggleOpt(this)"><input type="checkbox" id="optNoOpen" style="accent-color:var(--gold)"> 🔒 لا يُسمح بفتحه</label>
+    <label class="opt-label" onclick="toggleOpt(this)"><input type="checkbox" id="optOpen" style="accent-color:var(--gold)"> 🔓 يُسمح بفتحه</label>
+    <label class="opt-label" onclick="toggleOpt(this)" style="grid-column:1/-1"><input type="checkbox" id="optMeasure" style="accent-color:var(--gold)"> 📏 مسموح القياس</label>
   </div>
 </div>
 
@@ -998,7 +1001,7 @@ function renderDashOrders(filter='all'){
       <span class="amt">${o.amount} د.ل</span>
       <div class="acts">
         <div class="act" onclick="viewOrder('${o.id}')" title="تفاصيل">👁️</div>
-        <div class="act" onclick="changeStatus('${o.id}')" title="تغيير الحالة">🔄</div>
+        <div class="act" onclick="showStatusMenu('${o.id}',event)" title="تغيير الحالة" style="color:var(--gold)">🔄</div>
       </div>
     </div>`;
   }).join('');
@@ -1073,7 +1076,7 @@ async function loadOrders(){
       <span class="amt">${o.amount} د.ل</span>
       <div class="acts">
         <div class="act" onclick="viewOrder('${o.id}')" title="تفاصيل">👁️</div>
-        <div class="act" onclick="changeStatus('${o.id}')" title="تغيير الحالة">🔄</div>
+        <div class="act" onclick="showStatusMenu('${o.id}',event)" title="تغيير الحالة" style="color:var(--gold)">🔄</div>
         <div class="act r" onclick="deleteOrder('${o.id}')" title="حذف">🗑️</div>
       </div>
     </div>`;
@@ -1091,48 +1094,53 @@ function refreshOrdersIfOpen(){
 
 async function viewOrder(id){
   const o=CACHE.orders.find(x=>x.id===id);if(!o) return;
-  const st=getStatus(o.status);
+  const st=getOrderStatus(o.status);
   document.getElementById('od-ttl').innerHTML=`📦 #${String(o.order_number||0).padStart(6,'0')}`;
-  // Agent phone clickable
-  const agentSection = o.agent_name ? `
+
+  const agentHtml = o.agent_name ? `
     <div class="odr"><span class="odl">المندوب</span>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span class="odv">${o.agent_name}</span>
-        ${o.agent_phone?`<div style="display:flex;gap:5px">
-          <a href="tel:${o.agent_phone}" style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldborder);padding:3px 8px;border-radius:7px;font-size:10px;text-decoration:none;font-weight:700;">📞 اتصال</a>
-          <a href="https://wa.me/${o.agent_phone.replace(/\D/g,'')}" target="_blank" style="background:rgba(34,197,94,0.1);color:var(--ok);border:1px solid rgba(34,197,94,0.2);padding:3px 8px;border-radius:7px;font-size:10px;text-decoration:none;font-weight:700;">💬 واتس</a>
-        </div>`:''}
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-weight:600">${o.agent_name}</span>
+        ${o.agent_phone?`
+          <div style="display:flex;gap:5px">
+            <a href="tel:${o.agent_phone}" style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldborder);padding:3px 9px;border-radius:7px;font-size:10px;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:3px">📞 اتصال</a>
+            <a href="https://wa.me/${o.agent_phone.replace(/\D/g,'')}" target="_blank" style="background:rgba(34,197,94,0.1);color:var(--ok);border:1px solid rgba(34,197,94,0.2);padding:3px 9px;border-radius:7px;font-size:10px;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:3px">💬 واتس</a>
+            <span onclick="navigator.clipboard.writeText('${o.agent_phone}');toast('✅ تم نسخ الرقم')" style="background:var(--bg3);color:var(--txt2);border:1px solid var(--border);padding:3px 9px;border-radius:7px;font-size:10px;cursor:pointer;font-weight:700">📋 نسخ</span>
+          </div>
+        `:''}
       </div>
     </div>` : `<div class="odr"><span class="odl">المندوب</span><span class="odv" style="color:var(--txt3)">لم يُعين بعد</span></div>`;
 
   document.getElementById('od-body').innerHTML=`
-    <div style="background:var(--goldbg);border:1px solid var(--goldborder);border-radius:11px;padding:12px;margin-bottom:14px;text-align:center">
-      <div style="font-family:'Tajawal',sans-serif;font-weight:800;font-size:26px;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">#${String(o.order_number||0).padStart(6,'0')}</div>
-      <span class="badge ${st.cls}" style="margin-top:6px;display:inline-flex">${st.icon} ${st.label}</span>
+    <div style="background:var(--goldbg);border:1px solid var(--goldborder);border-radius:11px;padding:14px;margin-bottom:14px;text-align:center">
+      <div style="font-family:'Tajawal',sans-serif;font-weight:800;font-size:28px;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">#${String(o.order_number||0).padStart(6,'0')}</div>
+      <div style="margin-top:6px"><span class="badge ${st.cls}">${st.icon} ${st.ar}</span></div>
     </div>
+    <div class="odr"><span class="odl">التاجر</span><span class="odv">${o.merchant_name}</span></div>
     <div class="odr"><span class="odl">المستلم</span><span class="odv">${o.recipient}</span></div>
     <div class="odr"><span class="odl">الهاتف</span>
       <div style="display:flex;align-items:center;gap:7px">
         <span class="odv">${o.phone}</span>
-        <a href="tel:${o.phone}" style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldborder);padding:2px 7px;border-radius:6px;font-size:10px;text-decoration:none;font-weight:700;">📞</a>
+        <a href="tel:${o.phone}" style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldborder);padding:2px 8px;border-radius:6px;font-size:10px;text-decoration:none;font-weight:700">📞</a>
+        ${o.phone2?`<span style="font-size:11px;color:var(--txt3)">${o.phone2}</span>`:''}
       </div>
     </div>
-    <div class="odr"><span class="odl">المدينة/المنطقة</span><span class="odv">${o.city||''} ${o.area?'/ '+o.area:''}</span></div>
+    <div class="odr"><span class="odl">المدينة / المنطقة</span><span class="odv">${o.city||''} ${o.area?'/ '+o.area:''}</span></div>
     <div class="odr"><span class="odl">العنوان</span><span class="odv">${o.address}</span></div>
-    <div class="odr"><span class="odl">التاجر</span><span class="odv">${o.merchant_name}</span></div>
-    ${agentSection}
+    ${agentHtml}
     ${o.content?`<div class="odr"><span class="odl">المحتوى</span><span class="odv">${o.content}</span></div>`:''}
-    ${o.qty?`<div class="odr"><span class="odl">الكمية</span><span class="odv">${o.qty}</span></div>`:''}
-    ${o.options?`<div class="odr"><span class="odl">خيارات</span><span class="odv" style="font-size:11px">${o.options}</span></div>`:''}
-    <div class="odr"><span class="odl">سعر المنتج</span><span class="odv">${o.amount} د.ل</span></div>
-    <div class="odr"><span class="odl">رسوم التوصيل</span><span class="odv">${o.fee} د.ل — على حساب ${o.fee_on==='merchant'?'التاجر':'المستلم'}</span></div>
-    <div class="odr"><span class="odl">الإجمالي</span><span class="odv" style="color:var(--gold);font-weight:700">${(+o.amount||0)+(+o.fee||0)} د.ل</span></div>
+    ${o.qty>1?`<div class="odr"><span class="odl">الكمية</span><span class="odv">${o.qty}</span></div>`:''}
+    ${o.options?`<div class="odr"><span class="odl">خيارات</span><span class="odv" style="font-size:11px;color:var(--txt3)">${o.options}</span></div>`:''}
+    <div class="odr"><span class="odl">سعر المنتج</span><span class="odv">${o.amount||0} د.ل</span></div>
+    <div class="odr"><span class="odl">رسوم التوصيل</span><span class="odv">${o.fee||0} د.ل — على حساب ${o.fee_on==='merchant'?'التاجر':'المستلم'}</span></div>
+    <div class="odr"><span class="odl">الإجمالي</span><span class="odv" style="font-family:'Tajawal',sans-serif;font-weight:800;font-size:16px;color:var(--gold)">${(+o.amount||0)+(+o.fee||0)} د.ل</span></div>
     ${o.notes?`<div class="odr"><span class="odl">ملاحظات</span><span class="odv">${o.notes}</span></div>`:''}
-    <div class="odr" style="border:none"><span class="odl">تاريخ الإنشاء</span><span class="odv">${new Date(o.created_at).toLocaleDateString('ar-LY')}</span></div>
+    <div class="odr" style="border:none"><span class="odl">تاريخ الإنشاء</span><span class="odv">${new Date(o.created_at).toLocaleDateString('ar-LY',{year:'numeric',month:'long',day:'numeric'})}</span></div>
   `;
-  const nextBtn = getStatus(o.status).next || o.status==='waiting_approval' || o.status==='waiting_delivery' || o.status==='in_delivery' || o.status==='returned';
+
+  const canChange = !['delivered','return_received'].includes(o.status);
   document.getElementById('od-acts').innerHTML=`
-    ${nextBtn?`<button class="bp" onclick="changeStatus('${id}');closeModal('orderDetail')">🔄 تغيير الحالة</button>`:''}
+    ${canChange?`<button class="bp" onclick="showStatusMenu('${id}',event);closeModal('orderDetail')">🔄 تغيير الحالة</button>`:''}
     <button class="bs" onclick="closeModal('orderDetail')">إغلاق</button>
   `;
   openModal('orderDetail');
@@ -1163,237 +1171,291 @@ async function deleteOrder(id){
 
 
 // ════════════════════════════════════════
-//  STATUS SYSTEM - نظام الحالات
+//  نظام الحالات الكامل
 // ════════════════════════════════════════
-const STATUSES = {
-  'waiting_approval': { label: 'انتظار موافقة', icon: '⏳', cls: 'b-p', next: 'waiting_delivery' },
-  'waiting_delivery': { label: 'انتظار التوصيل', icon: '📋', cls: 'b-w', next: 'in_delivery' },
-  'in_delivery':      { label: 'قيد التوصيل', icon: '🚚', cls: 'b-w', next: 'delivered' },
-  'delivered':        { label: 'تم التوصيل', icon: '✅', cls: 'b-ok', next: null },
-  'returned':         { label: 'تم الاسترجاع', icon: '↩️', cls: 'b-e', next: null },
-  'return_received':  { label: 'راجع مستلم', icon: '📥', cls: 'b-e', next: null },
-  'pending':          { label: 'في الانتظار', icon: '⏳', cls: 'b-p', next: 'waiting_delivery' },
-  'transit':          { label: 'في الطريق', icon: '🚚', cls: 'b-w', next: 'delivered' },
+const ORDER_STATUSES = {
+  'waiting_approval': { ar:'انتظار موافقة', icon:'⏳', cls:'b-p' },
+  'waiting_delivery':  { ar:'انتظار التوصيل', icon:'📋', cls:'b-w' },
+  'in_delivery':       { ar:'قيد التوصيل',   icon:'🚚', cls:'b-w' },
+  'delivered':         { ar:'تم التوصيل',    icon:'✅', cls:'b-ok' },
+  'returned':          { ar:'تم الاسترجاع',  icon:'↩️', cls:'b-e' },
+  'return_received':   { ar:'راجع مستلم',    icon:'📥', cls:'b-e' },
+  // legacy
+  'pending':  { ar:'انتظار موافقة', icon:'⏳', cls:'b-p' },
+  'transit':  { ar:'قيد التوصيل',  icon:'🚚', cls:'b-w' },
 };
 
-function getStatus(s) {
-  return STATUSES[s] || { label: s||'—', icon: '📦', cls: 'b-p', next: null };
+function getOrderStatus(s){
+  return ORDER_STATUSES[s] || { ar: s||'—', icon:'📦', cls:'b-p' };
 }
 
-// Override old sb() function
-function sb(s) { return { c: getStatus(s).cls, t: getStatus(s).icon + ' ' + getStatus(s).label }; }
+// Override sb() to use new system
+function sb(s){
+  const st = getOrderStatus(s);
+  return { c: st.cls, t: st.icon + ' ' + st.ar };
+}
 
-// ────────────────────────────────────────
-//  STATUS CHANGE WITH AGENT SELECTION
-// ────────────────────────────────────────
-async function changeStatus(id) {
-  const o = CACHE.orders.find(x => x.id === id);
-  if (!o) return;
-  const st = getStatus(o.status);
-  
-  if (o.status === 'waiting_delivery' || o.status === 'pending') {
-    // Need to select agent first
-    showAgentSelectModal(id);
-    return;
+// ─── زر تغيير الحالة الخارجي ───
+function showStatusMenu(id, event){
+  event.stopPropagation();
+  const o = CACHE.orders.find(x=>x.id===id);
+  if(!o) return;
+
+  // Remove existing menu
+  document.getElementById('statusMenu')?.remove();
+
+  const s = o.status;
+  const menu = document.createElement('div');
+  menu.id = 'statusMenu';
+  menu.style.cssText = `position:fixed;background:var(--bg2);border:1px solid var(--goldborder);border-radius:12px;padding:8px;z-index:5000;min-width:220px;box-shadow:0 20px 60px rgba(0,0,0,.8);`;
+
+  // Position near button
+  const btn = event.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  menu.style.top = (rect.bottom + 8) + 'px';
+  menu.style.right = (window.innerWidth - rect.right) + 'px';
+
+  let options = '';
+
+  if(s === 'waiting_approval' || s === 'pending'){
+    options += menuBtn('✅','قبول — انتظار التوصيل','#22c55e',`approveOrder('${id}')`);
+    options += menuBtn('❌','رفض الشحنة','#ef4444',`rejectOrder('${id}')`);
   }
-  if (o.status === 'in_delivery' || o.status === 'transit') {
-    // Show delivered/returned choice
-    showDeliveryChoiceModal(id);
-    return;
+  else if(s === 'waiting_delivery'){
+    options += menuBtn('🛵','تعيين مندوب وإرسال','#d4a017',`showAgentSelect('${id}')`);
   }
-  if (o.status === 'waiting_approval') {
-    cnf('✅','قبول الشحنة','هل تريد قبول هذه الشحنة وإرسالها لانتظار التوصيل؟', async()=>{
-      await updateOrderStatus(id, 'waiting_delivery', 'انتظار التوصيل');
+  else if(s === 'in_delivery' || s === 'transit'){
+    options += menuBtn('✅','تم التسليم للزبون','#22c55e',`markOrderDelivered('${id}')`);
+    options += menuBtn('↩️','راجع — تسليم للفرع','#ef4444',`markOrderReturned('${id}')`);
+  }
+  else if(s === 'returned'){
+    options += menuBtn('📥','تم استلام المرتجع','#d4a017',`markReturnReceived('${id}')`);
+    options += menuBtn('🔄','إعادة إرسال','#3b82f6',`reshipsOrder('${id}')`);
+  }
+  else {
+    options = '<div style="padding:10px 12px;font-size:12px;color:var(--txt3)">لا يمكن تغيير هذه الحالة</div>';
+  }
+
+  menu.innerHTML = `
+    <div style="padding:6px 10px 8px;font-size:10px;color:var(--txt3);border-bottom:1px solid var(--border);margin-bottom:6px">
+      📦 #${String(o.order_number||0).padStart(6,'0')} — ${getOrderStatus(s).icon} ${getOrderStatus(s).ar}
+    </div>
+    ${options}
+  `;
+
+  document.body.appendChild(menu);
+
+  // Close on outside click
+  setTimeout(()=>{
+    document.addEventListener('click', function closeMenu(e){
+      if(!menu.contains(e.target)){ menu.remove(); document.removeEventListener('click',closeMenu); }
     });
-    return;
-  }
-  toast('ℹ️ لا يمكن تغيير هذه الحالة', 'warn');
+  },100);
 }
 
-function showAgentSelectModal(orderId) {
-  const agents = CACHE.agents.filter(a => a.status !== 'offline');
-  const o = CACHE.orders.find(x => x.id === orderId);
-  
-  // Create modal dynamically
-  let existing = document.getElementById('agentSelectModal');
-  if (existing) existing.remove();
-  
+function menuBtn(icon, label, color, action){
+  return `<div onclick="${action};document.getElementById('statusMenu')?.remove()" style="display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;color:${color};transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background=''">${icon} ${label}</div>`;
+}
+
+async function approveOrder(id){
+  await updateOrderStatus(id,'waiting_delivery','انتظار التوصيل');
+  const o=CACHE.orders.find(x=>x.id===id);
+  await addNotif('✅','rgba(34,197,94,0.1)',`تم قبول الشحنة #${String(o?.order_number||0).padStart(6,'0')} — انتظار التوصيل`);
+  toast('✅ تم قبول الشحنة','ok');
+}
+
+async function rejectOrder(id){
+  cnf('❌','رفض الشحنة','هل تريد رفض هذه الشحنة؟', async()=>{
+    await updateOrderStatus(id,'returned','تم الاسترجاع');
+    toast('❌ تم رفض الشحنة','err');
+  });
+}
+
+function showAgentSelect(orderId){
+  const agents = CACHE.agents.filter(a=>a.status!=='offline');
+  const o = CACHE.orders.find(x=>x.id===orderId);
+  document.getElementById('agentSelectDlg')?.remove();
   const div = document.createElement('div');
-  div.id = 'agentSelectModal';
+  div.id = 'agentSelectDlg';
   div.className = 'ov show';
   div.innerHTML = `
     <div class="modal" style="width:440px">
-      <button class="mc" onclick="document.getElementById('agentSelectModal').remove()">✕</button>
+      <button class="mc" onclick="document.getElementById('agentSelectDlg').remove()">✕</button>
       <h2>🛵 اختر مندوب التوصيل</h2>
-      <div style="margin-bottom:14px;font-size:12px;color:var(--txt3)">الشحنة: #${String(o?.order_number||0).padStart(6,'0')} — ${o?.recipient||''}</div>
+      <div style="background:var(--goldbg);border:1px solid var(--goldborder);border-radius:9px;padding:10px;margin-bottom:14px;font-size:12px;color:var(--txt2)">
+        📦 #${String(o?.order_number||0).padStart(6,'0')} — ${o?.recipient||''} — ${o?.area||''}
+      </div>
       <div class="fg">
         <label class="fl">المندوب *</label>
-        <select class="fi2" id="selectedAgent">
+        <select class="fi2" id="agentSelectVal">
           <option value="">اختر المندوب...</option>
           ${agents.map(a=>`<option value="${a.id}" data-phone="${a.phone||''}">${a.name} — ${a.area||''} — ${a.status==='online'?'🟢 نشط':'🟡 مشغول'}</option>`).join('')}
         </select>
       </div>
       <div class="mac">
         <button class="bp" onclick="confirmAgentAssign('${orderId}')">✅ تعيين وإرسال للتوصيل</button>
-        <button class="bs" onclick="document.getElementById('agentSelectModal').remove()">إلغاء</button>
+        <button class="bs" onclick="document.getElementById('agentSelectDlg').remove()">إلغاء</button>
       </div>
     </div>
   `;
   document.body.appendChild(div);
-  div.addEventListener('click', e => { if(e.target===div) div.remove(); });
+  div.addEventListener('click',e=>{if(e.target===div)div.remove();});
 }
 
-async function confirmAgentAssign(orderId) {
-  const agentId = document.getElementById('selectedAgent').value;
-  if (!agentId) { toast('⚠️ اختر مندوباً','warn'); return; }
-  const agent = CACHE.agents.find(a => a.id === agentId);
-  await SB.from('orders').update({
-    status: 'in_delivery', status_text: 'قيد التوصيل',
-    agent_id: agentId, agent_name: agent?.name||'',
-    agent_phone: agent?.phone||'',
-    updated_at: new Date().toISOString()
-  }).eq('id', orderId);
-  const o = CACHE.orders.find(x=>x.id===orderId);
-  if(o){ o.status='in_delivery'; o.status_text='قيد التوصيل'; o.agent_id=agentId; o.agent_name=agent?.name||''; o.agent_phone=agent?.phone||''; }
-  document.getElementById('agentSelectModal')?.remove();
-  await addNotif('🚚','rgba(212,160,23,0.1)',`شحنة #${String(o?.order_number||0).padStart(6,'0')} في طريقها مع ${agent?.name||''}`);
-  renderDashboard(); renderOrdersPage?.();
+async function confirmAgentAssign(orderId){
+  const sel = document.getElementById('agentSelectVal');
+  const agentId = sel?.value;
+  if(!agentId){toast('⚠️ اختر مندوباً','warn');return;}
+  const agent = CACHE.agents.find(a=>a.id===agentId);
+  const {error} = await SB.from('orders').update({
+    status:'in_delivery', status_text:'قيد التوصيل',
+    agent_id:agentId, agent_name:agent?.name||'',
+    agent_phone:agent?.phone||'',
+    updated_at:new Date().toISOString()
+  }).eq('id',orderId);
+  if(error){toast('❌ '+error.message,'err');return;}
+  const o=CACHE.orders.find(x=>x.id===orderId);
+  if(o){o.status='in_delivery';o.status_text='قيد التوصيل';o.agent_id=agentId;o.agent_name=agent?.name||'';o.agent_phone=agent?.phone||'';}
+  document.getElementById('agentSelectDlg')?.remove();
+  await addNotif('🚚','rgba(212,160,23,0.1)',`شحنة #${String(o?.order_number||0).padStart(6,'0')} قيد التوصيل مع ${agent?.name||''}`);
+  renderDashboard();renderOrdersPage?.();
   toast(`✅ تم تعيين ${agent?.name} للتوصيل`,'ok');
 }
 
-function showDeliveryChoiceModal(orderId) {
-  const o = CACHE.orders.find(x=>x.id===orderId);
-  let existing = document.getElementById('deliveryChoiceModal');
-  if(existing) existing.remove();
-  const div = document.createElement('div');
-  div.id = 'deliveryChoiceModal';
-  div.className = 'ov show';
-  div.innerHTML = `
-    <div class="modal" style="width:420px;text-align:center">
-      <button class="mc" onclick="document.getElementById('deliveryChoiceModal').remove()">✕</button>
-      <h2>📦 حالة الشحنة #${String(o?.order_number||0).padStart(6,'0')}</h2>
-      <p style="color:var(--txt3);font-size:13px;margin-bottom:20px">${o?.recipient||''} — ${o?.area||''}</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <button onclick="markDelivered('${orderId}')" style="background:linear-gradient(135deg,#065f46,#10b981);color:#fff;border:none;padding:20px;border-radius:13px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:8px">
-          <span style="font-size:32px">✅</span>
-          <span>تم التسليم</span>
-          <span style="font-size:11px;opacity:.8">تسليم للزبون</span>
-        </button>
-        <button onclick="markReturned('${orderId}')" style="background:linear-gradient(135deg,#7f1d1d,#ef4444);color:#fff;border:none;padding:20px;border-radius:13px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:8px">
-          <span style="font-size:32px">↩️</span>
-          <span>راجع</span>
-          <span style="font-size:11px;opacity:.8">تسليم للفرع</span>
-        </button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(div);
-  div.addEventListener('click', e => { if(e.target===div) div.remove(); });
-}
-
-async function markDelivered(id) {
-  await updateOrderStatus(id, 'delivered', 'تم التوصيل');
-  document.getElementById('deliveryChoiceModal')?.remove();
-  // Update merchant balance
-  const o = CACHE.orders.find(x=>x.id===id);
-  if(o?.merchant_id) {
-    const m = CACHE.merchants.find(x=>x.id===o.merchant_id);
-    if(m) {
-      const newBal = (+m.balance||0) + (+o.amount||0);
-      await SB.from('merchants').update({balance:newBal, orders_count:(+m.orders_count||0)+1}).eq('id',m.id);
-      m.balance=newBal; m.orders_count=(+m.orders_count||0)+1;
+async function markOrderDelivered(id){
+  await updateOrderStatus(id,'delivered','تم التوصيل');
+  const o=CACHE.orders.find(x=>x.id===id);
+  // Add to merchant balance
+  if(o?.merchant_id){
+    const m=CACHE.merchants.find(x=>x.id===o.merchant_id);
+    if(m){
+      const newBal=(+m.balance||0)+(+o.amount||0);
+      const newCnt=(+m.orders_count||0)+1;
+      await SB.from('merchants').update({balance:newBal,orders_count:newCnt}).eq('id',m.id);
+      m.balance=newBal;m.orders_count=newCnt;
     }
   }
-  await addNotif('✅','rgba(34,197,94,0.1)',`تم توصيل شحنة #${String(o?.order_number||0).padStart(6,'0')} بنجاح`);
-  renderDashboard();
-  toast('✅ تم تسجيل التوصيل بنجاح!','ok');
+  await addNotif('✅','rgba(34,197,94,0.1)',`تم توصيل شحنة #${String(o?.order_number||0).padStart(6,'0')} — المبلغ أضيف لمستحقات التاجر`);
+  renderDashboard();renderOrdersPage?.();
+  toast('✅ تم التوصيل! المبلغ أضيف لمستحقات التاجر','ok');
 }
 
-async function markReturned(id) {
-  await updateOrderStatus(id, 'returned', 'تم الاسترجاع');
-  document.getElementById('deliveryChoiceModal')?.remove();
-  const o = CACHE.orders.find(x=>x.id===id);
-  await addNotif('↩️','rgba(239,68,68,0.1)',`شحنة #${String(o?.order_number||0).padStart(6,'0')} مرتجعة`);
-  renderDashboard();
-  toast('↩️ تم تسجيل الاسترجاع','warn');
+async function markOrderReturned(id){
+  await updateOrderStatus(id,'returned','تم الاسترجاع');
+  const o=CACHE.orders.find(x=>x.id===id);
+  await addNotif('↩️','rgba(239,68,68,0.1)',`شحنة #${String(o?.order_number||0).padStart(6,'0')} مرتجعة — بانتظار استلامها في الفرع`);
+  renderDashboard();renderOrdersPage?.();
+  toast('↩️ تم تسجيل الإرجاع','warn');
 }
 
-async function markReturnReceived(id) {
-  await updateOrderStatus(id, 'return_received', 'راجع مستلم');
-  const o = CACHE.orders.find(x=>x.id===id);
-  await addNotif('📥','rgba(239,68,68,0.1)',`شحنة #${String(o?.order_number||0).padStart(6,'0')} راجع مستلم — جاهزة للإعادة`);
-  toast('📥 تم تسجيل استلام المرتجع','ok');
-  renderDashboard();
+async function markReturnReceived(id){
+  await updateOrderStatus(id,'return_received','راجع مستلم');
+  const o=CACHE.orders.find(x=>x.id===id);
+  await addNotif('📥','rgba(212,160,23,0.1)',`راجع مستلم: شحنة #${String(o?.order_number||0).padStart(6,'0')} — جاهزة للإعادة أو الاستلام`);
+  renderDashboard();renderOrdersPage?.();
+  toast('📥 تم استلام المرتجع في الفرع','ok');
 }
 
-async function updateOrderStatus(id, status, statusText) {
-  const {error} = await SB.from('orders').update({
-    status, status_text: statusText,
-    updated_at: new Date().toISOString()
-  }).eq('id', id);
-  if(error){ toast('❌ خطأ: '+error.message,'err'); return; }
-  const o = CACHE.orders.find(x=>x.id===id);
-  if(o){ o.status=status; o.status_text=statusText; }
-  renderDashboard();
-  if(document.getElementById('page-orders')?.classList.contains('active')) renderOrdersPage?.();
+async function reshipsOrder(id){
+  cnf('🔄','إعادة إرسال','هل تريد إعادة إرسال هذه الشحنة؟',async()=>{
+    await updateOrderStatus(id,'waiting_delivery','انتظار التوصيل');
+    toast('🔄 تم إعادة الشحنة لقائمة الانتظار','ok');
+  });
 }
 
-// ════════════════════════════════════════
-//  ORDER FORM FUNCTIONS
-// ════════════════════════════════════════
-function onMerchantChange() {
-  const id = document.getElementById('oMerch').value;
-  const m = CACHE.merchants.find(x=>x.id===id);
-  const info = document.getElementById('merchantInfo');
-  if(m && info) {
-    document.getElementById('mInfoName').textContent = m.name + ' — ' + (m.owner||'');
-    document.getElementById('mInfoPhone').textContent = m.phone||'';
-    info.style.display = 'block';
-    // Set city if merchant has one
-    const cityEl = document.getElementById('oCity');
-    if(cityEl && m.area) {
-      const opt = Array.from(cityEl.options).find(o=>o.value===m.area);
-      if(opt) { cityEl.value=m.area; onCityChange(); }
-    }
-  } else if(info) {
-    info.style.display = 'none';
+async function updateOrderStatus(id, status, statusText){
+  const {error}=await SB.from('orders').update({
+    status, status_text:statusText,
+    updated_at:new Date().toISOString()
+  }).eq('id',id);
+  if(error){toast('❌ '+error.message,'err');return;}
+  const o=CACHE.orders.find(x=>x.id===id);
+  if(o){o.status=status;o.status_text=statusText;}
+}
+
+// ─── openModal override for new order ───
+function openModal(id){
+  if(id==='newOrder'){
+    populateBranchSelects();
+    const ms=document.getElementById('oMerch');
+    if(ms) ms.innerHTML='<option value="">ابحث أو اختر التاجر...</option>'+CACHE.merchants.filter(m=>m.status==='active').map(m=>`<option value="${m.id}">${m.name} — ${m.owner||''}</option>`).join('');
+    const cityEl=document.getElementById('oCity');
+    const cities=window._cities||[];
+    if(cityEl) cityEl.innerHTML='<option value="">اختر المدينة...</option>'+cities.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+    const areaEl=document.getElementById('oArea');
+    if(areaEl) areaEl.innerHTML='<option value="">اختر المنطقة أولاً المدينة...</option>';
+    const num=document.getElementById('nextOrderNum');
+    if(num) num.textContent='#'+String(DB.nextOrderNum||1).padStart(6,'0');
+    document.getElementById('merchantInfo')&&(document.getElementById('merchantInfo').style.display='none');
+    // reset
+    ['oRec','oPh','oPh2','oAddr','oContent','oNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    ['oProductPrice'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='0';});
+    document.getElementById('oFee')&&(document.getElementById('oFee').value='25');
+    document.getElementById('oQty')&&(document.getElementById('oQty').value='1');
+    document.querySelectorAll('.opt-label').forEach(l=>l.classList.remove('checked'));
+    document.querySelectorAll('.opt-label input[type=checkbox]').forEach(c=>c.checked=false);
+    const fr=document.getElementById('feeRecipient');if(fr)fr.checked=true;
+    calcTotal();
   }
+  if(id==='newMerchant'||id==='newAgent'){populateCitySelects();populateBranchSelects();}
+  if(id==='newBranch') populateCitySelects();
+  if(id==='newArea') populateCitySelects();
+  document.getElementById('ov-'+id)?.classList.add('show');
 }
 
-function onCityChange() {
-  const city = document.getElementById('oCity').value;
-  const areas = CACHE.pricing.filter(p => !p.city || p.city===city || p.city==='');
-  const areaEl = document.getElementById('oArea');
-  if(!areaEl) return;
-  areaEl.innerHTML = '<option value="">اختر المنطقة...</option>' +
-    areas.map(p=>`<option value="${p.id}" data-price="${p.price}">${p.area} — ${p.price} د.ل</option>`).join('');
-  calcTotal();
+// ─── Form helpers ───
+function onMerchantChange(){
+  const id=document.getElementById('oMerch').value;
+  const m=CACHE.merchants.find(x=>x.id===id);
+  const info=document.getElementById('merchantInfo');
+  if(m&&info){
+    document.getElementById('mInfoName').textContent=m.name+(m.owner?' — '+m.owner:'');
+    document.getElementById('mInfoPhone').textContent=m.phone||'';
+    info.style.display='block';
+    if(m.area){
+      const cityEl=document.getElementById('oCity');
+      if(cityEl){
+        const opt=Array.from(cityEl.options).find(o=>o.value===m.area||o.value===m.city);
+        if(opt){cityEl.value=opt.value;onCityChange();}
+      }
+    }
+  } else if(info){ info.style.display='none'; }
 }
 
-function onAreaChange() {
-  const areaEl = document.getElementById('oArea');
+function onCityChange(){
+  const city=document.getElementById('oCity').value;
+  const areas=CACHE.pricing.filter(p=>!p.city||p.city===city||p.city==='');
+  const areaEl=document.getElementById('oArea');
   if(!areaEl) return;
-  const sel = areaEl.options[areaEl.selectedIndex];
-  const price = sel?.dataset?.price;
-  if(price) {
-    const feeEl = document.getElementById('oFee');
-    if(feeEl) feeEl.value = price;
+  if(!areas.length){
+    areaEl.innerHTML='<option value="">لا توجد مناطق مسجلة لهذه المدينة</option>';
+  } else {
+    areaEl.innerHTML='<option value="">اختر المنطقة...</option>'+areas.map(p=>`<option value="${p.id}" data-price="${p.price}">${p.area} — ${p.price} د.ل</option>`).join('');
   }
   calcTotal();
 }
 
-function calcTotal() {
-  const prod = +document.getElementById('oProductPrice')?.value||0;
-  const fee  = +document.getElementById('oFee')?.value||0;
-  const tot  = prod + fee;
-  const tProd = document.getElementById('totProduct');
-  const tFee  = document.getElementById('totFee');
-  const tTot  = document.getElementById('oTotal');
-  if(tProd) tProd.textContent = prod + ' د.ل';
-  if(tFee)  tFee.textContent  = fee  + ' د.ل';
-  if(tTot)  tTot.textContent  = tot  + ' د.ل';
+function onAreaChange(){
+  const areaEl=document.getElementById('oArea');
+  if(!areaEl) return;
+  const sel=areaEl.options[areaEl.selectedIndex];
+  const price=sel?.dataset?.price;
+  if(price){const feeEl=document.getElementById('oFee');if(feeEl)feeEl.value=price;}
+  calcTotal();
 }
 
+function calcTotal(){
+  const prod=+(document.getElementById('oProductPrice')?.value||0);
+  const fee=+(document.getElementById('oFee')?.value||0);
+  const tot=prod+fee;
+  const tp=document.getElementById('totProduct');if(tp)tp.textContent=prod+' د.ل';
+  const tf=document.getElementById('totFee');if(tf)tf.textContent=fee+' د.ل';
+  const tt=document.getElementById('oTotal');if(tt)tt.textContent=tot+' د.ل';
+}
+
+function toggleOpt(label){ label.classList.toggle('checked'); }
+
+// ─── Updated submitOrder ───
 async function submitOrder(){
   const merch=document.getElementById('oMerch').value;
   const rec=document.getElementById('oRec').value.trim();
@@ -1401,39 +1463,36 @@ async function submitOrder(){
   const addr=document.getElementById('oAddr').value.trim();
   const city=document.getElementById('oCity')?.value||'';
   const areaEl=document.getElementById('oArea');
-  const areaText=areaEl?.options[areaEl.selectedIndex]?.text?.split('—')[0]?.trim()||'';
-  const content=document.getElementById('oContent')?.value||'';
-  if(!merch||!rec||!ph||!addr||!city||!areaEl?.value){
-    toast('⚠️ يرجى ملء جميع الحقول المطلوبة','warn');return;
-  }
+  if(!merch){toast('⚠️ اختر التاجر أولاً','warn');return;}
+  if(!rec||!ph){toast('⚠️ أدخل اسم وهاتف المستلم','warn');return;}
+  if(!city||!areaEl?.value){toast('⚠️ اختر المدينة والمنطقة','warn');return;}
+  if(!addr){toast('⚠️ أدخل العنوان التفصيلي','warn');return;}
+  const areaText=areaEl.options[areaEl.selectedIndex]?.text?.split('—')[0]?.trim()||'';
   const merchant=CACHE.merchants.find(m=>m.id===merch);
-  // get fee on
-  const feeOnEl=document.querySelector('input[name="feeOn"]:checked');
-  const feeOn=feeOnEl?.value||'recipient';
-  // options
+  const feeOn=document.querySelector('input[name="feeOn"]:checked')?.value||'recipient';
   const opts=[];
   if(document.getElementById('optFragile')?.checked) opts.push('قابل للكسر');
   if(document.getElementById('optHeat')?.checked) opts.push('لا يتحمل الحرارة');
-  if(document.getElementById('optNoOpen')?.checked) opts.push('لا يسمح بفتحه');
-  if(document.getElementById('optOpen')?.checked) opts.push('يسمح بفتحه');
+  if(document.getElementById('optNoOpen')?.checked) opts.push('لا يُسمح بفتحه');
+  if(document.getElementById('optOpen')?.checked) opts.push('يُسمح بفتحه');
   if(document.getElementById('optMeasure')?.checked) opts.push('مسموح القياس');
-  // order number
   const orderNum=DB.nextOrderNum||1;
-  await SB.from('order_counter').update({next_num:orderNum+1}).eq('id',1);
+  try {
+    await SB.from('order_counter').update({next_num:orderNum+1}).eq('id',1);
+  } catch(e){}
   DB.nextOrderNum=orderNum+1;
   const newO={
     order_number:orderNum,
-    merchant_id:merchant?.id||null,
-    merchant_name:merchant?.name||'',
+    merchant_id:merchant?.id||null,merchant_name:merchant?.name||'',
     recipient:rec,phone:ph,
     phone2:document.getElementById('oPh2')?.value||'',
-    address:addr,area:areaText,city:city,
-    agent_id:null,agent_name:'',
+    address:addr,area:areaText,city,
+    agent_id:null,agent_name:'',agent_phone:'',
     status:'waiting_approval',status_text:'انتظار موافقة',
     amount:+document.getElementById('oProductPrice')?.value||0,
     fee:+document.getElementById('oFee')?.value||25,
     fee_on:feeOn,
-    content:content,
+    content:document.getElementById('oContent')?.value||'',
     qty:+document.getElementById('oQty')?.value||1,
     options:opts.join('، '),
     notes:document.getElementById('oNotes')?.value||'',
@@ -1441,1289 +1500,25 @@ async function submitOrder(){
   const {data,error}=await SB.from('orders').insert(newO).select().single();
   if(error){toast('❌ خطأ: '+error.message,'err');return;}
   CACHE.orders.unshift({...data});
+  closeModal('newOrder');
+  renderDashboard();
+  // Success animation
+  showOrderSuccess(orderNum,rec);
   await addNotif('📦','rgba(212,160,23,0.1)',`شحنة جديدة #${String(orderNum).padStart(6,'0')} — ${rec} — انتظار موافقة`);
-  closeModal('newOrder');
-  renderDashboard();
-  // Show success animation
-  showSuccessToast(orderNum, rec);
-  // Reset form
-  ['oRec','oPh','oPh2','oAddr','oContent','oNotes'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.value='';
-  });
-  document.getElementById('oProductPrice')&&(document.getElementById('oProductPrice').value='0');
-  document.getElementById('oFee')&&(document.getElementById('oFee').value='25');
-  document.getElementById('oMerch')&&(document.getElementById('oMerch').value='');
-  document.getElementById('merchantInfo')&&(document.getElementById('merchantInfo').style.display='none');
-  const fRec=document.querySelector('input[name="feeOn"][value="recipient"]');
-  if(fRec) fRec.checked=true;
-  ['optFragile','optHeat','optNoOpen','optOpen','optMeasure'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.checked=false;
-  });
-  calcTotal();
 }
 
-function showSuccessToast(num, recipient) {
-  const existing = document.getElementById('successBanner');
-  if(existing) existing.remove();
-  const div = document.createElement('div');
-  div.id = 'successBanner';
-  div.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.8);background:var(--bg2);border:2px solid var(--ok);border-radius:20px;padding:30px 40px;text-align:center;z-index:9999;opacity:0;transition:all .4s cubic-bezier(.34,1.56,.64,1)';
-  div.innerHTML = `
-    <div style="font-size:52px;margin-bottom:12px">✅</div>
-    <div style="font-family:'Tajawal',sans-serif;font-size:22px;font-weight:800;color:var(--ok);margin-bottom:6px">تم إنشاء الشحنة!</div>
-    <div style="font-family:'Tajawal',sans-serif;font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">#${String(num).padStart(6,'0')}</div>
-    <div style="font-size:13px;color:var(--txt3);margin-top:6px">${recipient} — انتظار موافقة</div>
-  `;
-  document.body.appendChild(div);
-  setTimeout(()=>{div.style.opacity='1';div.style.transform='translate(-50%,-50%) scale(1)'},50);
-  setTimeout(()=>{div.style.opacity='0';div.style.transform='translate(-50%,-50%) scale(.9)';setTimeout(()=>div.remove(),400)},3000);
+function showOrderSuccess(num, recipient){
+  const d=document.createElement('div');
+  d.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.8);background:var(--bg2);border:2px solid var(--ok);border-radius:20px;padding:32px 40px;text-align:center;z-index:9999;opacity:0;transition:all .4s cubic-bezier(.34,1.56,.64,1);min-width:260px;box-shadow:0 20px 60px rgba(34,197,94,0.2)';
+  d.innerHTML=`<div style="font-size:52px;margin-bottom:12px">✅</div>
+    <div style="font-family:'Tajawal',sans-serif;font-size:20px;font-weight:800;color:var(--ok);margin-bottom:8px">تم إنشاء الشحنة!</div>
+    <div style="font-family:'Tajawal',sans-serif;font-size:30px;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">#${String(num).padStart(6,'0')}</div>
+    <div style="font-size:12px;color:var(--txt3);margin-top:8px">${recipient} — ⏳ انتظار موافقة</div>`;
+  document.body.appendChild(d);
+  setTimeout(()=>{d.style.opacity='1';d.style.transform='translate(-50%,-50%) scale(1)'},50);
+  setTimeout(()=>{d.style.opacity='0';d.style.transform='translate(-50%,-50%) scale(.9)';setTimeout(()=>d.remove(),400)},3200);
 }
 
-async function submitMerchant(){
-  const name=document.getElementById('mName').value.trim();
-  const owner=document.getElementById('mOwner').value.trim();
-  const phone=document.getElementById('mPhone').value.trim();
-  if(!name||!owner||!phone){toast('⚠️ يرجى ملء الحقول المطلوبة','warn');return;}
-  const {data,error}=await SB.from('merchants').insert({
-    name,owner,phone,
-    area:document.getElementById('mArea').value,
-    address:document.getElementById('mAddr').value,
-    fee:+document.getElementById('mFee').value||25,
-    pay_method:document.getElementById('mPay').value,
-    balance:0,orders_count:0,status:'active'
-  }).select().single();
-  if(error){toast('❌ خطأ: '+error.message,'err');return;}
-  CACHE.merchants.unshift(data);
-  renderMerchantsPage();
-  closeModal('newMerchant');
-  toast(`✅ تمت إضافة التاجر "${name}"!`);
-  ['mName','mOwner','mPhone','mAddr'].forEach(id=>document.getElementById(id).value='');
-}
-
-function viewMerchant(id){
-  const m=CACHE.merchants.find(x=>x.id===id);if(!m) return;
-  document.getElementById('od-ttl').innerHTML=`🏪 ${m.name}`;
-  document.getElementById('od-body').innerHTML=`
-    <div class="odr"><span class="odl">المالك</span><span class="odv">${m.owner}</span></div>
-    <div class="odr"><span class="odl">الهاتف</span><span class="odv">${m.phone}</span></div>
-    <div class="odr"><span class="odl">المنطقة</span><span class="odv">${m.area}</span></div>
-    <div class="odr"><span class="odl">الشحنات</span><span class="odv" style="color:var(--acc)">${m.orders_count}</span></div>
-    <div class="odr"><span class="odl">المستحق</span><span class="odv amt">${(+m.balance||0).toLocaleString()} د.ل</span></div>
-    <div class="odr" style="border:none"><span class="odl">الحالة</span><span class="badge ${m.status==='active'?'b-ok':'b-e'}">${m.status==='active'?'نشط':'غير نشط'}</span></div>
-  `;
-  document.getElementById('od-acts').innerHTML=`
-    <button class="bp" onclick="settleMerchant('${id}');closeModal('orderDetail')">💰 تسوية</button>
-    <button class="bs" onclick="closeModal('orderDetail')">إغلاق</button>
-  `;
-  openModal('orderDetail');
-}
-
-function settleMerchant(id){
-  const m=CACHE.merchants.find(x=>x.id===id);if(!m) return;
-  document.getElementById('stlTtl').textContent=`💰 تسوية مع ${m.name}`;
-  document.getElementById('stlBody').innerHTML=`
-    <div class="odr"><span class="odl">التاجر</span><span class="odv">${m.name}</span></div>
-    <div class="odr"><span class="odl">المستحق</span><span class="odv amt">${(+m.balance||0).toLocaleString()} د.ل</span></div>
-    <div class="fg" style="margin-top:14px"><label class="fl">طريقة التحويل</label><select class="fi2"><option>تحويل بنكي</option><option>نقداً</option><option>محفظة إلكترونية</option></select></div>
-    <div class="fg"><label class="fl">ملاحظات</label><input class="fi2" id="stlNotes" placeholder="ملاحظات..."></div>
-  `;
-  document.getElementById('stlConfirm').onclick = async ()=>{
-    const amt=+m.balance||0;
-    await SB.from('settlements').insert({merchant_id:m.id,merchant_name:m.name,amount:amt,notes:document.getElementById('stlNotes')?.value||''});
-    await SB.from('merchants').update({balance:0}).eq('id',m.id);
-    m.balance=0;
-    renderMerchantsPage(); renderFinSummary();
-    closeModal('settle');
-    toast(`✅ تمت تسوية حساب ${m.name} (${amt.toLocaleString()} د.ل)`);
-  };
-  openModal('settle');
-}
-
-async function settleAll(){
-  cnf('💰','تسوية شاملة','سيتم تصفير مستحقات جميع التجار. هل تريد المتابعة؟', async ()=>{
-    for(const m of CACHE.merchants){
-      if(+m.balance>0){
-        await SB.from('settlements').insert({merchant_id:m.id,merchant_name:m.name,amount:+m.balance});
-        await SB.from('merchants').update({balance:0}).eq('id',m.id);
-        m.balance=0;
-      }
-    }
-    renderMerchantsPage(); renderFinSummary();
-    toast('✅ تمت التسوية الشاملة!');
-  });
-}
-
-async function deleteMerchant(id){
-  const m=CACHE.merchants.find(x=>x.id===id);
-  cnf('🗑️','حذف التاجر',`هل تريد حذف "${m?.name}"؟`, async ()=>{
-    await SB.from('merchants').delete().eq('id',id);
-    CACHE.merchants=CACHE.merchants.filter(x=>x.id!==id);
-    renderMerchantsPage(); toast('🗑️ تم حذف التاجر');
-  });
-}
-
-// ════════════════════════════════════════
-//  AGENTS PAGE
-// ════════════════════════════════════════
-function renderAgentsPage(){
-  const as=CACHE.agents;
-  const active=as.filter(a=>a.status==='online').length;
-  const busy=as.filter(a=>a.status==='busy').length;
-  const avgR=as.length?(as.reduce((s,a)=>s+(+a.rating||0),0)/as.length).toFixed(1):0;
-  document.getElementById('aStats').innerHTML=`
-    <div class="sc g"><div class="sct"><div class="sci g">🛵</div></div><div class="sv">${as.length}</div><div class="sl">إجمالي المناديب</div></div>
-    <div class="sc o"><div class="sct"><div class="sci o">🟢</div></div><div class="sv">${active}</div><div class="sl">نشط الآن</div></div>
-    <div class="sc p"><div class="sct"><div class="sci p">🟡</div></div><div class="sv">${busy}</div><div class="sl">مشغول</div></div>
-    <div class="sc gd"><div class="sct"><div class="sci gd">⭐</div></div><div class="sv">${avgR}</div><div class="sl">متوسط التقييم</div></div>
-  `;
-  const el=document.getElementById('aTable');
-  if(!as.length){el.innerHTML='<div class="empty"><div>🛵</div><p>لا يوجد مناديب</p></div>';return;}
-  el.innerHTML=as.map(a=>`
-    <div class="tr" style="grid-template-columns:1fr 120px 90px 90px 90px 110px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div class="agav" style="background:${a.color}22;color:${a.color}">
-          ${a.name.charAt(0)}<div class="odot ${agDot(a.status)}"></div>
-        </div>
-        <div><div style="font-weight:600">${a.name}</div><div class="sub">${a.phone}</div></div>
-      </div>
-      <span>${a.area}</span>
-      <span style="color:var(--acc);font-weight:700">${a.orders_count}</span>
-      <span class="badge ${agBadge(a.status)}">${agSt(a.status)}</span>
-      <span style="color:var(--gold)">⭐ ${a.rating}</span>
-      <div class="acts">
-        <div class="act" onclick="viewAgent('${a.id}')" title="تفاصيل">👁️</div>
-        <div class="act" onclick="toggleAgentStatus('${a.id}')" title="تغيير الحالة">🔄</div>
-        <div class="act r" onclick="deleteAgent('${a.id}')" title="حذف">🗑️</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-async function submitAgent(){
-  const name=document.getElementById('agName').value.trim();
-  const phone=document.getElementById('agPhone').value.trim();
-  if(!name||!phone){toast('⚠️ يرجى ملء الحقول المطلوبة','warn');return;}
-  const colors=['#00d4aa','#7c3aed','#ff6b35','#f59e0b','#10b981'];
-  const {data,error}=await SB.from('agents').insert({
-    name,phone,
-    national_id:document.getElementById('agId').value,
-    area:document.getElementById('agArea').value,
-    vehicle:document.getElementById('agV').value,
-    salary:+document.getElementById('agSal').value||800,
-    orders_count:0,rating:5.0,status:'offline',
-    color:colors[CACHE.agents.length%colors.length]
-  }).select().single();
-  if(error){toast('❌ خطأ: '+error.message,'err');return;}
-  CACHE.agents.push(data);
-  renderAgentsPage(); renderDashAgents();
-  closeModal('newAgent');
-  toast(`✅ تمت إضافة المندوب "${name}"!`);
-  ['agName','agPhone','agId'].forEach(id=>document.getElementById(id).value='');
-}
-
-function viewAgent(id){
-  const a=CACHE.agents.find(x=>x.id===id);if(!a) return;
-  document.getElementById('od-ttl').innerHTML=`🛵 ${a.name}`;
-  document.getElementById('od-body').innerHTML=`
-    <div class="odr"><span class="odl">الهاتف</span><span class="odv">${a.phone}</span></div>
-    <div class="odr"><span class="odl">المنطقة</span><span class="odv">${a.area}</span></div>
-    <div class="odr"><span class="odl">المركبة</span><span class="odv">${a.vehicle}</span></div>
-    <div class="odr"><span class="odl">الشحنات اليوم</span><span class="odv" style="color:var(--acc)">${a.orders_count}</span></div>
-    <div class="odr"><span class="odl">التقييم</span><span class="odv" style="color:var(--gold)">⭐ ${a.rating}</span></div>
-    <div class="odr"><span class="odl">الراتب الأساسي</span><span class="odv">${a.salary} د.ل</span></div>
-    <div class="odr" style="border:none"><span class="odl">الحالة</span><span class="badge ${agBadge(a.status)}">${agSt(a.status)}</span></div>
-  `;
-  document.getElementById('od-acts').innerHTML=`
-    <button class="bp" onclick="toggleAgentStatus('${id}');closeModal('orderDetail')">🔄 تغيير الحالة</button>
-    <button class="bs" onclick="closeModal('orderDetail')">إغلاق</button>
-  `;
-  openModal('orderDetail');
-}
-
-async function toggleAgentStatus(id){
-  const a=CACHE.agents.find(x=>x.id===id);if(!a) return;
-  const nx={online:'busy',busy:'offline',offline:'online'};
-  const ns=nx[a.status];
-  await SB.from('agents').update({status:ns}).eq('id',id);
-  a.status=ns;
-  renderAgentsPage(); renderDashAgents();
-  toast(`🔄 ${a.name}: ${agSt(ns)}`);
-}
-
-async function deleteAgent(id){
-  const a=CACHE.agents.find(x=>x.id===id);
-  cnf('🗑️','حذف المندوب',`هل تريد حذف "${a?.name}"؟`, async ()=>{
-    await SB.from('agents').delete().eq('id',id);
-    CACHE.agents=CACHE.agents.filter(x=>x.id!==id);
-    renderAgentsPage(); renderDashAgents();
-    toast('🗑️ تم حذف المندوب');
-  });
-}
-
-async function payAll(){
-  cnf('💰','صرف جميع الرواتب','سيتم تسجيل صرف رواتب جميع المناديب. هل تريد المتابعة؟', async ()=>{
-    await addNotif('💰','rgba(245,158,11,0.1)','تم صرف رواتب جميع المناديب');
-    toast('✅ تم تسجيل صرف جميع الرواتب!');
-  });
-}
-
-// ════════════════════════════════════════
-//  FINANCE
-// ════════════════════════════════════════
-function renderFinancePage(){
-  const ms=CACHE.merchants;
-  const as=CACHE.agents;
-  const revenue = CACHE.orders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(+o.fee||0),0);
-  const merchantBal = ms.reduce((s,m)=>s+(+m.balance||0),0);
-  const netProfit = Math.max(0, revenue - as.reduce((s,a)=>s+(+a.salary||800),0));
-  document.getElementById('fStats').innerHTML=`
-    <div class="sc g"><div class="sct"><div class="sci g">💵</div></div><div class="sv">${revenue.toLocaleString()}</div><div class="sl">إيرادات (د.ل)</div></div>
-    <div class="sc o"><div class="sct"><div class="sci o">⏳</div></div><div class="sv">${merchantBal.toLocaleString()}</div><div class="sl">مستحقات التجار (د.ل)</div></div>
-    <div class="sc gd"><div class="sct"><div class="sci gd">📊</div></div><div class="sv">${netProfit.toLocaleString()}</div><div class="sl">صافي الربح (د.ل)</div></div>
-  `;
-  document.getElementById('settleT').innerHTML=ms.map(m=>`
-    <div class="fi">
-      <div class="fi-l"><div class="fi-ico" style="background:rgba(0,212,170,.1)">🏪</div><div><h4>${m.name}</h4><span>${m.orders_count} شحنة · ${m.area}</span></div></div>
-      <div style="display:flex;align-items:center;gap:9px">
-        <span class="fi-a w">${(+m.balance||0).toLocaleString()} د.ل</span>
-        <button class="pb" onclick="settleMerchant('${m.id}')">تسوية</button>
-      </div>
-    </div>
-  `).join('');
-  document.getElementById('payT').innerHTML=as.map(a=>`
-    <div class="fi">
-      <div class="fi-l">
-        <div class="agav" style="background:${a.color}22;color:${a.color};border-radius:50%">${a.name.charAt(0)}</div>
-        <div><h4>${a.name}</h4><span>${a.orders_count} شحنة · راتب ${a.salary} د.ل</span></div>
-      </div>
-      <div style="display:flex;align-items:center;gap:9px">
-        <span class="fi-a pos">+${(a.orders_count*20+(+a.salary||800)).toLocaleString()} د.ل</span>
-        <button class="pb warn" onclick="payAgent('${a.id}')">صرف</button>
-      </div>
-    </div>
-  `).join('');
-}
-
-async function payAgent(id){
-  const a=CACHE.agents.find(x=>x.id===id);if(!a) return;
-  const amt=a.orders_count*20+(+a.salary||800);
-  cnf('💰','صرف الراتب',`سيتم صرف ${amt} د.ل للمندوب ${a.name}`, async ()=>{
-    await addNotif('💰','rgba(245,158,11,0.1)',`تم صرف راتب ${a.name}: ${amt} د.ل`);
-    toast(`✅ تم صرف ${amt} د.ل للمندوب ${a.name}`);
-  });
-}
-
-// ════════════════════════════════════════
-//  PRICING
-// ════════════════════════════════════════
-function renderPricingPage(){
-  const el=document.getElementById('pricingT');
-  if(!CACHE.pricing.length){el.innerHTML='<div class="empty"><div>🗺️</div><p>لا توجد أسعار</p></div>';return;}
-  el.innerHTML=CACHE.pricing.map((p,i)=>`
-    <div class="ar">
-      <span style="font-weight:600">📍 ${p.area}</span>
-      <div style="display:flex;align-items:center;gap:9px">
-        <input class="pi" id="pr-${p.id}" value="${p.price}" type="number" min="0">
-        <span style="font-size:12px;color:var(--muted)">د.ل</span>
-      </div>
-    </div>
-  `).join('');
-}
-
-async function savePricing(){
-  let updated=0;
-  for(const p of CACHE.pricing){
-    const el=document.getElementById('pr-'+p.id);
-    if(!el) continue;
-    const newP=+el.value;
-    if(newP!==+p.price){
-      await SB.from('pricing').update({price:newP,updated_at:new Date().toISOString()}).eq('id',p.id);
-      p.price=newP; updated++;
-    }
-  }
-  toast(updated>0 ? `✅ تم حفظ ${updated} تغييرات!` : 'ℹ️ لا توجد تغييرات');
-}
-
-// ════════════════════════════════════════
-//  NOTIFICATIONS
-// ════════════════════════════════════════
-function renderNotifications(){
-  const el=document.getElementById('notifList');
-  if(!CACHE.notifications.length){el.innerHTML='<div class="empty"><div>🔔</div><p>لا توجد إشعارات</p></div>';return;}
-  el.innerHTML=CACHE.notifications.map(n=>`
-    <div class="ni2 ${n.is_read?'':'unread'}" onclick="readNotif('${n.id}')">
-      <div class="ni-ico" style="background:${n.icon_bg||'rgba(0,212,170,.1)'}">${n.icon}</div>
-      <div class="ni-t"><h4>${n.title}</h4><span>${timeAgo(n.created_at)}</span></div>
-      ${n.is_read?'':'<div class="ni-dot"></div>'}
-    </div>
-  `).join('');
-}
-
-async function addNotif(icon,bg,title){
-  const {data}=await SB.from('notifications').insert({icon,icon_bg:bg,title,is_read:false}).select().single();
-  if(data){ CACHE.notifications.unshift(data); await loadNotifications(); }
-}
-
-async function readNotif(id){
-  await SB.from('notifications').update({is_read:true}).eq('id',id);
-  const n=CACHE.notifications.find(x=>x.id===id);
-  if(n) n.is_read=true;
-  renderNotifications(); await loadNotifications();
-}
-
-async function markAllRead(){
-  await SB.from('notifications').update({is_read:true}).eq('is_read',false);
-  CACHE.notifications.forEach(n=>n.is_read=true);
-  renderNotifications(); await loadNotifications();
-  toast('✅ تم تحديد الكل كمقروء');
-}
-
-async function clearNotifs(){
-  cnf('🗑️','حذف الإشعارات','سيتم حذف جميع الإشعارات؟', async ()=>{
-    await SB.from('notifications').delete().neq('id','00000000-0000-0000-0000-000000000000');
-    CACHE.notifications=[];
-    renderNotifications(); await loadNotifications();
-    toast('🗑️ تم حذف جميع الإشعارات');
-  });
-}
-
-// ════════════════════════════════════════
-//  REPORTS
-// ════════════════════════════════════════
-function renderReportsPage(){
-  const vals=Array.from({length:30},()=>Math.floor(Math.random()*800+300));
-  const max=Math.max(...vals);
-  document.getElementById('mChart').innerHTML=vals.map(v=>`
-    <div class="bw"><div class="bar" style="height:${(v/max)*100}%;background:linear-gradient(180deg,var(--acc3),rgba(124,58,237,.2))"></div></div>
-  `).join('');
-  const sorted=[...CACHE.merchants].sort((a,b)=>b.orders_count-a.orders_count);
-  document.getElementById('topM').innerHTML=sorted.slice(0,5).map((m,i)=>`
-    <div class="fi">
-      <div class="fi-l">
-        <div style="width:26px;height:26px;border-radius:50%;background:${['var(--gold)','#9ca3af','#cd7f32','rgba(255,255,255,.1)','rgba(255,255,255,.07)'][i]};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">${i+1}</div>
-        <div><h4>${m.name}</h4><span>${m.orders_count} شحنة</span></div>
-      </div>
-      <span class="amt">${(+m.balance||0).toLocaleString()} د.ل</span>
-    </div>
-  `).join('');
-}
-
-function genReport(type){
-  toast(`📥 جاري إنشاء التقرير الـ${type}...`);
-  setTimeout(()=>toast(`✅ تم إنشاء التقرير الـ${type} بنجاح!`), 1800);
-}
-
-function exportCSV(){
-  const rows=[['ID','التاجر','المستلم','المنطقة','الحالة','المبلغ','رسوم التوصيل','التاريخ']];
-  CACHE.orders.forEach(o=>rows.push([o.id,o.merchant_name,o.recipient,o.area,o.status_text,o.amount,o.fee,new Date(o.created_at).toLocaleDateString('ar')]));
-  const csv='\ufeff'+rows.map(r=>r.join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download=`waseet-orders-${new Date().toISOString().split('T')[0]}.csv`;
-  a.click();
-  toast('✅ تم تصدير الشحنات كـ CSV!');
-}
-
-// ════════════════════════════════════════
-//  SETTINGS
-// ════════════════════════════════════════
-function chgPass(){
-  const np=document.getElementById('np').value;
-  const cp=document.getElementById('cp').value;
-  if(!np||!cp){toast('⚠️ يرجى ملء الحقول','warn');return;}
-  if(np!==cp){toast('❌ كلمتا المرور غير متطابقتين','err');return;}
-  if(np.length<6){toast('⚠️ 6 أحرف على الأقل','warn');return;}
-  toast('✅ تم تغيير كلمة المرور!');
-  document.getElementById('np').value='';document.getElementById('cp').value='';
-}
-
-// ════════════════════════════════════════
-//  NAVIGATION
-// ════════════════════════════════════════
-const pgTitles={dashboard:'لوحة التحكم',orders:'إدارة الشحنات',scan:'المسح الضوئي',branches:'إدارة الفروع',merchants:'إدارة التجار',agents:'إدارة المناديب',finance:'التسويات المالية',pricing:'أسعار التوصيل',reports:'التقارير',settings:'الإعدادات',notifications:'الإشعارات'};
-
-function nav(el){
-  if(!el) return;
-  document.querySelectorAll('.ni').forEach(i=>i.classList.remove('active'));
-  el.classList.add('active');
-  const pid=el.dataset.page;
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+pid).classList.add('active');
-  document.getElementById('pgTitle').textContent=pgTitles[pid]||pid;
-  onPageOpen(pid);
-}
-
-function onPageOpen(pid){
-  if(pid==='orders'){
-    populateBranchSelects();
-    const sel=document.getElementById('oArea');
-    if(sel) sel.innerHTML='<option value="">اختر...</option>'+CACHE.pricing.map(p=>`<option value="${p.id}">${p.area} — ${p.price} د.ل</option>`).join('');
-    const ms=document.getElementById('oMerch');
-    if(ms) ms.innerHTML='<option value="">اختر...</option>'+CACHE.merchants.filter(m=>m.status==='active').map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
-    loadOrders();
-  }
-  if(pid==='merchants') renderMerchantsPage();
-  if(pid==='agents') renderAgentsPage();
-  if(pid==='finance') renderFinancePage();
-  if(pid==='pricing') renderPricingPage();
-  if(pid==='notifications') renderNotifications();
-  if(pid==='reports') renderReportsPage();
-  if(pid==='branches') renderBranchesPage();
-  if(pid==='scan') renderScanHistory();
-}
-
-function toggleSidebar(){
-  const sb = document.getElementById('sidebar');
-  const isMobile = window.innerWidth <= 900;
-  if(isMobile){
-    const isOpen = sb.style.display === 'flex';
-    if(isOpen){
-      sb.style.display = 'none';
-      const ov = document.getElementById('sbOverlay2');
-      if(ov) ov.remove();
-    } else {
-      sb.style.cssText='display:flex;position:fixed;top:0;right:0;width:250px;height:100vh;z-index:9999;box-shadow:-4px 0 24px rgba(212,160,23,0.15);';
-      const overlay=document.createElement('div');
-      overlay.id='sbOverlay2';
-      overlay.style.cssText='position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.7);';
-      overlay.onclick=()=>{sb.style.display='none';overlay.remove();};
-      document.body.appendChild(overlay);
-    }
-    return;
-  }
-  if(false){
-    const isOpen = sb.style.display === 'flex';
-    if(isOpen){
-      sb.style.display = 'none';
-      document.getElementById('main').style.marginRight = '0';
-      document.getElementById('main').style.width = '100vw';
-      const ov = document.getElementById('sbOverlay');
-      if(ov) ov.remove();
-    } else {
-      sb.style.cssText = 'display:flex!important;position:fixed!important;top:0!important;right:0!important;width:260px!important;height:100vh!important;z-index:9999!important;';
-      const overlay = document.createElement('div');
-      overlay.id = 'sbOverlay';
-      overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.6);';
-      overlay.onclick = ()=>{
-        sb.style.display = 'none';
-        overlay.remove();
-      };
-      document.body.appendChild(overlay);
-    }
-  } else {
-    sb.style.cssText = '';
-    document.getElementById('main').style.cssText = '';
-    sb.classList.toggle('collapsed');
-  }
-}
-
-function onSearch(){
-  if(document.getElementById('page-orders').classList.contains('active')) loadOrders();
-}
-
-// ════════════════════════════════════════
-//  MODALS
-// ════════════════════════════════════════
-function openModal(id){
-  if(id==='newOrder'){
-    populateBranchSelects();
-    // Populate merchants
-    const ms=document.getElementById('oMerch');
-    if(ms) ms.innerHTML='<option value="">اختر التاجر...</option>'+CACHE.merchants.filter(m=>m.status==='active').map(m=>`<option value="${m.id}">${m.name} — ${m.owner||''}</option>`).join('');
-    // Populate cities
-    const cityEl=document.getElementById('oCity');
-    if(cityEl) {
-      const cities=window._cities||[];
-      cityEl.innerHTML='<option value="">اختر المدينة...</option>'+cities.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
-    }
-    // Clear area
-    const areaEl=document.getElementById('oArea');
-    if(areaEl) areaEl.innerHTML='<option value="">اختر المنطقة...</option>';
-    // Show next order number
-    const num=document.getElementById('nextOrderNum');
-    if(num) num.textContent='#'+String(DB.nextOrderNum||1).padStart(6,'0');
-    calcTotal();
-  }
-  if(id==='newMerchant'||id==='newAgent'){ populateCitySelects();populateBranchSelects(); }
-  if(id==='newBranch'){ populateCitySelects(); }
-  if(id==='newArea'){ populateCitySelects(); }
-  document.getElementById('ov-'+id)?.classList.add('show');
-}
-
-function closeModal(id){ document.getElementById('ov-'+id).classList.remove('show'); }
-
-// ════════════════════════════════════════
-//  CONFIRM
-// ════════════════════════════════════════
-function cnf(icon,title,msg,cb){
-  document.getElementById('cIcon').textContent=icon;
-  document.getElementById('cTitle').textContent=title;
-  document.getElementById('cMsg').textContent=msg;
-  document.getElementById('cYes').onclick=()=>{cb();closeCnf();};
-  document.getElementById('cdlg').classList.add('show');
-}
-function closeCnf(){ document.getElementById('cdlg').classList.remove('show'); }
-
-// ════════════════════════════════════════
-//  TOAST
-// ════════════════════════════════════════
-let tt;
-function toast(msg,type=''){
-  const el=document.getElementById('toast');
-  el.textContent=msg; el.className='toast';
-  if(type) el.classList.add(type);
-  el.classList.add('show');
-  clearTimeout(tt);
-  tt=setTimeout(()=>el.classList.remove('show'),3500);
-}
-
-// ════════════════════════════════════════
-//  CLOCK
-// ════════════════════════════════════════
-function startClock(){
-  const upd=()=>{
-    const d=new Date();
-    document.getElementById('pgDate').textContent=d.toLocaleDateString('ar-LY',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' · '+d.toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
-  };
-  upd(); setInterval(upd,30000);
-}
-
-// ════════════════════════════════════════
-//  INIT
-// ════════════════════════════════════════
-
-// ════════════════════════════════════════
-//  BRANCHES
-// ════════════════════════════════════════
-async function loadBranches(){
-  const {data}=await SB.from('branches').select('*').order('created_at',{ascending:false});
-  window._branches=data||[];
-  populateBranchSelects();
-}
-async function loadCities(){
-  try {
-    const {data}=await SB.from('cities').select('*').order('name');
-    window._cities=data||[];
-  } catch(e){ window._cities=[]; }
-  populateCitySelects();
-}
-
-function populateCitySelects(){
-  const cities = window._cities||[];
-  const opts='<option value="">اختر المدينة...</option>'+cities.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
-  ['brCity','areaCity','mCity','agCity'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) el.innerHTML=opts;
-  });
-  renderCitiesTable();
-}
-
-function populateBranchSelects(){
-  const branches = window._branches||[];
-  const opts='<option value="">اختر الفرع...</option>'+branches.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
-  ['oBranch','mBranch','agBranch','fBranch'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) el.innerHTML=opts;
-  });
-  // populate fBranch filter in orders
-  const fb=document.getElementById('fBranch');
-  if(fb) fb.innerHTML='<option value="">كل الفروع</option>'+branches.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
-}
-
-function renderBranchesPage(){
-  const branches=window._branches||[];
-  const active=branches.filter(b=>b.status==='active').length;
-  document.getElementById('branchCount').textContent=`${branches.length} فرع`;
-  document.getElementById('branchStats').innerHTML=`
-    <div class="sc"><div class="sct"><div class="sci">🏢</div></div><div class="sv">${branches.length}</div><div class="sl">إجمالي الفروع</div></div>
-    <div class="sc"><div class="sct"><div class="sci">✅</div></div><div class="sv">${active}</div><div class="sl">الفروع النشطة</div></div>
-    <div class="sc"><div class="sct"><div class="sci">🏙️</div></div><div class="sv">${(window._cities||[]).length}</div><div class="sl">المدن المغطاة</div></div>
-  `;
-  const grid=document.getElementById('branchGrid');
-  if(!branches.length){
-    grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div>🏢</div><p>لا توجد فروع — أضف فرعاً الآن!</p></div>';
-    return;
-  }
-  grid.innerHTML=branches.map(b=>{
-    const bOrders=CACHE.orders.filter(o=>o.branch_id===b.id).length;
-    const bMerchants=CACHE.merchants.filter(m=>m.branch_id===b.id).length;
-    const bAgents=CACHE.agents.filter(a=>a.branch_id===b.id).length;
-    return `<div class="branch-card" onclick="viewBranch('${b.id}')">
-      <div class="bc-hdr">
-        <div class="bc-ic">🏢</div>
-        <div style="flex:1">
-          <div class="bc-name">${b.name}</div>
-          <div class="bc-city">📍 ${b.city||'—'}</div>
-        </div>
-        <span class="badge ${b.status==='active'?'b-ok':'b-e'}">${b.status==='active'?'نشط':'متوقف'}</span>
-      </div>
-      <div style="font-size:11px;color:var(--txt3);margin-bottom:8px">👤 ${b.manager_name||'—'} · ${b.phone||'—'}</div>
-      <div class="bc-stats">
-        <div class="bs-item"><div class="bs-val">${bOrders}</div><div class="bs-lbl">شحنة</div></div>
-        <div class="bs-item"><div class="bs-val">${bMerchants}</div><div class="bs-lbl">تاجر</div></div>
-        <div class="bs-item"><div class="bs-val">${bAgents}</div><div class="bs-lbl">مندوب</div></div>
-      </div>
-      <div class="bc-foot">
-        <button onclick="event.stopPropagation();viewBranch('${b.id}')" style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldborder);padding:4px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:600;">👁️ عرض</button>
-        <button onclick="event.stopPropagation();toggleBranchStatus('${b.id}')" style="background:transparent;color:var(--txt2);border:1px solid var(--border);padding:4px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Cairo',sans-serif;">🔄</button>
-        <button onclick="event.stopPropagation();deleteBranch('${b.id}')" style="background:rgba(239,68,68,0.1);color:var(--err);border:1px solid rgba(239,68,68,0.2);padding:4px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Cairo',sans-serif;">🗑️</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function viewBranch(id){
-  const b=(window._branches||[]).find(x=>x.id===id);if(!b) return;
-  const bO=CACHE.orders.filter(o=>o.branch_id===b.id).length;
-  const bM=CACHE.merchants.filter(m=>m.branch_id===b.id).length;
-  const bA=CACHE.agents.filter(a=>a.branch_id===b.id).length;
-  document.getElementById('bdTtl').innerHTML=`🏢 ${b.name}`;
-  document.getElementById('bdBody').innerHTML=`
-    <div class="odr"><span class="odl">المدينة</span><span class="odv">📍 ${b.city||'—'}</span></div>
-    <div class="odr"><span class="odl">العنوان</span><span class="odv">${b.address||'—'}</span></div>
-    <div class="odr"><span class="odl">مدير الفرع</span><span class="odv">${b.manager_name||'—'}</span></div>
-    <div class="odr"><span class="odl">الهاتف</span><span class="odv">${b.phone||'—'}</span></div>
-    <div class="odr"><span class="odl">البريد الإلكتروني</span><span class="odv">${b.email||'—'}</span></div>
-    <div class="odr"><span class="odl">الحالة</span><span class="badge ${b.status==='active'?'b-ok':'b-e'}">${b.status==='active'?'نشط':'متوقف'}</span></div>
-    <div class="odr"><span class="odl">الشحنات</span><span class="odv" style="color:var(--gold)">${bO}</span></div>
-    <div class="odr"><span class="odl">التجار</span><span class="odv">${bM}</span></div>
-    <div class="odr" style="border:none"><span class="odl">المناديب</span><span class="odv">${bA}</span></div>
-  `;
-  document.getElementById('bdActs').innerHTML=`
-    <button class="bp" onclick="toggleBranchStatus('${id}');closeModal('branchDetail')">🔄 تغيير الحالة</button>
-    <button class="bs" onclick="closeModal('branchDetail')">إغلاق</button>
-  `;
-  openModal('branchDetail');
-}
-
-async function submitBranch(){
-  const name=document.getElementById('brName').value.trim();
-  const city=document.getElementById('brCity').value;
-  const addr=document.getElementById('brAddr').value.trim();
-  const mgrName=document.getElementById('brMgrName').value.trim();
-  const phone=document.getElementById('brPhone').value.trim();
-  const email=document.getElementById('brEmail').value.trim();
-  const pass=document.getElementById('brPass').value.trim();
-  if(!name||!city||!addr||!mgrName||!phone||!email||!pass){toast('⚠️ يرجى ملء جميع الحقول المطلوبة','warn');return;}
-  const {data,error}=await SB.from('branches').insert({
-    name,city,address:addr,manager_name:mgrName,
-    national_id:document.getElementById('brMgrId').value,
-    phone,phone2:document.getElementById('brPhone2').value,
-    email,password_hash:pass,status:'active'
-  }).select().single();
-  if(error){toast('❌ خطأ: '+error.message,'err');return;}
-  window._branches=(window._branches||[]);
-  window._branches.unshift(data);
-  renderBranchesPage();populateBranchSelects();
-  closeModal('newBranch');
-  toast(`✅ تم إنشاء الفرع "${name}"!`,'ok');
-  ['brName','brAddr','brMgrName','brMgrId','brPhone','brPhone2','brEmail','brPass'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-}
-
-async function toggleBranchStatus(id){
-  const branches=window._branches||[];
-  const b=branches.find(x=>x.id===id);if(!b) return;
-  const ns=b.status==='active'?'inactive':'active';
-  await SB.from('branches').update({status:ns}).eq('id',id);
-  b.status=ns;
-  renderBranchesPage();
-  toast(`🔄 ${b.name}: ${ns==='active'?'نشط':'متوقف'}`);
-}
-
-async function deleteBranch(id){
-  const b=(window._branches||[]).find(x=>x.id===id);
-  cnf('🗑️','حذف الفرع',`هل تريد حذف الفرع "${b?.name}"؟`,async()=>{
-    await SB.from('branches').delete().eq('id',id);
-    window._branches=(window._branches||[]).filter(x=>x.id!==id);
-    renderBranchesPage();populateBranchSelects();
-    toast('🗑️ تم حذف الفرع');
-  });
-}
-
-// ════════════════════════════════════════
-//  CITIES & AREAS
-// ════════════════════════════════════════
-function renderCitiesTable(){
-  const cities=window._cities||[];
-  const el=document.getElementById('citiesT');
-  if(!el) return;
-  if(!cities.length){el.innerHTML='<div class="empty"><div>🏙️</div><p>لا توجد مدن — أضف مدينة الآن</p></div>';return;}
-  el.innerHTML=cities.map(c=>`
-    <div class="area-row">
-      <div><div style="font-weight:600;font-size:12px">🏙️ ${c.name}</div><div style="font-size:10px;color:var(--txt3)">${c.region||'—'}</div></div>
-      <div class="acts"><div class="act r" onclick="deleteCity('${c.id}')" title="حذف">🗑️</div></div>
-    </div>
-  `).join('');
-}
-
-async function submitArea(){
-  const name=document.getElementById('areaName').value.trim();
-  const price=+document.getElementById('areaPrice').value||25;
-  if(!name){toast('⚠️ أدخل اسم المنطقة','warn');return;}
-  const city=document.getElementById('areaCity').value;
-  const {data,error}=await SB.from('pricing').insert({area:name,price,city:city||null}).select().single();
-  if(error){toast('❌ خطأ: '+error.message,'err');return;}
-  CACHE.pricing.push(data);
-  renderPricingPage();
-  closeModal('newArea');
-  toast(`✅ تمت إضافة المنطقة "${name}"!`,'ok');
-  document.getElementById('areaName').value='';
-  document.getElementById('areaPrice').value='25';
-}
-
-async function deleteArea(id){
-  cnf('🗑️','حذف المنطقة','هل تريد حذف هذه المنطقة؟',async()=>{
-    await SB.from('pricing').delete().eq('id',id);
-    CACHE.pricing=CACHE.pricing.filter(x=>x.id!==id);
-    renderPricingPage();toast('🗑️ تم حذف المنطقة');
-  });
-}
-
-async function submitCity(){
-  const name=document.getElementById('cityName').value.trim();
-  const region=document.getElementById('cityRegion').value;
-  if(!name){toast('⚠️ أدخل اسم المدينة','warn');return;}
-  try {
-    const {data,error}=await SB.from('cities').insert({name,region}).select().single();
-    if(error) throw error;
-    window._cities=(window._cities||[]);
-    window._cities.push(data);
-  } catch(e) {
-    // cities table may not exist, add locally
-    window._cities=(window._cities||[]);
-    window._cities.push({id:Date.now().toString(),name,region});
-  }
-  populateCitySelects();
-  closeModal('newCity');
-  toast(`✅ تمت إضافة المدينة "${name}"!`,'ok');
-  document.getElementById('cityName').value='';
-}
-
-async function deleteCity(id){
-  cnf('🗑️','حذف المدينة','هل تريد حذف هذه المدينة؟',async()=>{
-    try { await SB.from('cities').delete().eq('id',id); } catch(e){}
-    window._cities=(window._cities||[]).filter(x=>x.id!==id);
-    populateCitySelects();
-    toast('🗑️ تم حذف المدينة');
-  });
-}
-
-// ════════════════════════════════════════
-//  SCAN
-// ════════════════════════════════════════
-const _scanLog=[];
-function openScan(){
-  const ol=document.getElementById('scanOverlayOL');
-  if(ol){ol.style.display='flex';return;}
-  // Create scan overlay
-  const div=document.createElement('div');
-  div.id='scanOverlayOL';
-  div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:3000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
-  div.innerHTML=`
-    <div style="position:absolute;top:16px;right:16px">
-      <button onclick="document.getElementById('scanOverlayOL').style.display='none'" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:var(--txt);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
-    </div>
-    <div style="width:240px;height:240px;border-radius:14px;background:#0a0a0a;position:relative;overflow:hidden;border:2px solid var(--gold)">
-      <div style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-top:2px solid var(--gold);border-right:2px solid var(--gold)"></div>
-      <div style="position:absolute;top:8px;left:8px;width:20px;height:20px;border-top:2px solid var(--gold);border-left:2px solid var(--gold)"></div>
-      <div style="position:absolute;bottom:8px;right:8px;width:20px;height:20px;border-bottom:2px solid var(--gold);border-right:2px solid var(--gold)"></div>
-      <div style="position:absolute;bottom:8px;left:8px;width:20px;height:20px;border-bottom:2px solid var(--gold);border-left:2px solid var(--gold)"></div>
-      <div style="position:absolute;width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);animation:scanAnim 2s linear infinite;top:0"></div>
-      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:44px;opacity:.12">📦</div>
-    </div>
-    <p style="font-size:12px;color:var(--txt3)">وجّه الكاميرا أو أدخل الرقم يدوياً</p>
-    <div style="display:flex;gap:7px">
-      <input id="scanOvInp" style="background:rgba(255,255,255,.08);border:1px solid var(--goldborder);color:var(--txt);padding:9px 13px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:14px;outline:none;width:180px;" placeholder="رقم الشحنة..." onkeydown="if(event.key==='Enter')scanFromOverlay()">
-      <button onclick="scanFromOverlay()" style="background:linear-gradient(135deg,var(--gold3),var(--gold));color:var(--bg);border:none;padding:9px 16px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">🔍</button>
-    </div>
-  `;
-  document.body.appendChild(div);
-}
-
-function scanFromOverlay(){
-  const val=document.getElementById('scanOvInp')?.value.trim();
-  if(!val) return;
-  document.getElementById('scanOverlayOL').style.display='none';
-  processScan(val);
-}
-
-function scanManual(){
-  const val=document.getElementById('scanInput').value.trim();
-  if(!val) return;
-  processScan(val);
-  document.getElementById('scanInput').value='';
-}
-
-function processScan(val){
-  const num=parseInt(val.replace(/\D/g,''));
-  const order=CACHE.orders.find(o=>+o.order_number===num||o.id===val);
-  const entry={val,time:new Date(),found:!!order,order};
-  _scanLog.unshift(entry);
-  if(order){
-    toast(`✅ شحنة #${String(order.order_number||0).padStart(6,'0')} — ${order.recipient} — ${order.status_text}`,'ok');
-    setTimeout(()=>viewOrder(order.id),500);
-  } else {
-    toast(`❌ لم يتم العثور على الشحنة: ${val}`,'err');
-  }
-  renderScanHistory();
-}
-
-function renderScanHistory(){
-  const el=document.getElementById('scanHistory');
-  if(!el) return;
-  if(!_scanLog.length){el.innerHTML='<div class="empty"><div>📷</div><p>لا توجد عمليات مسح</p></div>';return;}
-  el.innerHTML=_scanLog.slice(0,10).map(e=>`
-    <div class="fi">
-      <div class="fi-l">
-        <div class="fi-ico">${e.found?'✅':'❌'}</div>
-        <div><h4>${e.found?`#${String(e.order?.order_number||0).padStart(6,'0')} — ${e.order?.recipient||'—'}`:`رقم: ${e.val}`}</h4>
-        <span>${e.time.toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'})} · ${e.found?e.order?.status_text||'—':'غير موجود'}</span></div>
-      </div>
-      ${e.found?`<button onclick="viewOrder('${e.order?.id}')" style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldborder);padding:4px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:600;">عرض</button>`:''}
-    </div>
-  `).join('');
-}
-
-// ════════════════════════════════════════
-//  SHIPMENT NUMBER
-// ════════════════════════════════════════
-function formatOrderNum(n){ return '#'+String(n||0).padStart(6,'0'); }
-
-window.addEventListener('DOMContentLoaded', async ()=>{
-  // Responsive sidebar init
-  const sbEl = document.getElementById('sidebar');
-  const mainEl = document.getElementById('main');
-  if(window.innerWidth > 900){
-    // Desktop: show sidebar
-    sbEl.style.display = 'flex';
-    if(window.innerWidth <= 1200){
-      sbEl.classList.add('collapsed');
-    }
-  } else {
-    // Mobile: keep hidden, full width main
-    sbEl.style.display = 'none';
-    mainEl.style.marginRight = '0';
-    mainEl.style.width = '100vw';
-    mainEl.style.maxWidth = '100vw';
-  }
-  // close overlays on bg click
-  document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o) o.classList.remove('show');}));
-  document.getElementById('cdlg').addEventListener('click',e=>{if(e.target===document.getElementById('cdlg')) closeCnf();});
-
-  const {url,key}=getSavedConfig();
-  if(url && key){
-    initSupabase(url, key);
-    const ok = await testConnection();
-    if(ok){ await bootApp(); return; }
-  }
-  // Show config screen
-  document.getElementById('loadingScreen').style.display='none';
-  const cs=document.getElementById('configScreen');
-  cs.style.display='flex';
-  cs.style.alignItems='center';
-  cs.style.justifyContent='center';
-  // Pre-fill if partial
-  if(url) document.getElementById('cfgUrl').value=url;
-  if(key) document.getElementById('cfgKey').value=key;
-});
-
-async function refreshDashboard(){
-  await loadOrdersData();
-  renderDashboard();
-}
-</script>
-
-<script>
-
-// ════════════════════════════════════════
-//  SUPABASE INIT
-// ════════════════════════════════════════
-let SB = null;
-
-function getSavedConfig(){
-  return {
-    url: localStorage.getItem('wb_url')||'https://pddcqpsqveyzxpxnruha.supabase.co',
-    key: localStorage.getItem('wb_key')||'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkZGNxcHNxdmV5enhweG5ydWhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMjY1MDcsImV4cCI6MjA5MjcwMjUwN30.y5WuF_qeTmMLqinPojvt5CYKuGOvL6VbDjQfLv2I9wQ'
-  };
-}
-
-function initSupabase(url, key){
-  try {
-    SB = supabase.createClient(url, key);
-    return true;
-  } catch(e){ return false; }
-}
-
-async function testConnection(){
-  try {
-    const {error} = await SB.from('merchants').select('id').limit(1);
-    return !error;
-  } catch(e){ return false; }
-}
-
-async function saveConfig(){
-  const url = document.getElementById('cfgUrl').value.trim();
-  const key = document.getElementById('cfgKey').value.trim();
-  if(!url || !key){ toast('⚠️ أدخل URL و Key','warn'); return; }
-  localStorage.setItem('wb_url', url);
-  localStorage.setItem('wb_key', key);
-  document.getElementById('configScreen').style.display='none';
-  document.getElementById('loadingScreen').style.display='flex';
-  initSupabase(url, key);
-  const ok = await testConnection();
-  if(ok){ await bootApp(); }
-  else {
-    document.getElementById('configScreen').style.display='flex';
-    document.getElementById('configScreen').style.alignItems='center';
-    document.getElementById('configScreen').style.justifyContent='center';
-    document.getElementById('loadingScreen').style.display='none';
-    toast('❌ فشل الاتصال. تحقق من البيانات','err');
-  }
-}
-
-async function reConnect(){
-  const url = document.getElementById('cfgUrl2').value.trim();
-  const key = document.getElementById('cfgKey2').value.trim();
-  if(!url||!key){ toast('⚠️ أدخل البيانات','warn'); return; }
-  localStorage.setItem('wb_url', url);
-  localStorage.setItem('wb_key', key);
-  initSupabase(url, key);
-  const ok = await testConnection();
-  toast(ok ? '✅ تم الاتصال بنجاح!' : '❌ فشل الاتصال','ok');
-  if(ok) await bootApp();
-}
-
-// ════════════════════════════════════════
-//  BOOT
-// ════════════════════════════════════════
-async function bootApp(){
-  setLoadTxt('جاري تحميل البيانات...');
-  await refreshAll();
-  document.getElementById('loadingScreen').style.display='none';
-  startClock();
-  setupRealtime();
-}
-
-function setLoadTxt(t){ document.getElementById('loadTxt').textContent = t; }
-
-// ════════════════════════════════════════
-//  REALTIME
-// ════════════════════════════════════════
-function setupRealtime(){
-  SB.channel('waseet-live')
-    .on('postgres_changes',{event:'*',schema:'public',table:'orders'}, ()=>{ refreshDashboard(); refreshOrdersIfOpen(); })
-    .on('postgres_changes',{event:'*',schema:'public',table:'notifications'}, ()=>{ loadNotifications(); })
-    .subscribe();
-}
-
-// ════════════════════════════════════════
-//  DATA CACHE
-// ════════════════════════════════════════
-let CACHE = { orders:[], merchants:[], agents:[], pricing:[], notifications:[] };
-
-async function refreshAll(){
-  await Promise.all([loadOrdersData(), loadMerchantsData(), loadAgentsData(), loadPricingData(), loadNotifications()]);
-  renderDashboard();
-}
-
-async function loadOrdersData(){
-  const {data} = await SB.from('orders').select('*').order('created_at',{ascending:false}).limit(200);
-  CACHE.orders = data||[];
-}
-async function loadMerchantsData(){
-  const {data} = await SB.from('merchants').select('*').order('orders_count',{ascending:false});
-  CACHE.merchants = data||[];
-}
-async function loadAgentsData(){
-  const {data} = await SB.from('agents').select('*').order('status');
-  CACHE.agents = data||[];
-}
-async function loadPricingData(){
-  const {data} = await SB.from('pricing').select('*').order('area');
-  CACHE.pricing = data||[];
-}
-async function loadNotifications(){
-  const {data} = await SB.from('notifications').select('*').order('created_at',{ascending:false}).limit(50);
-  CACHE.notifications = data||[];
-  const unread = CACHE.notifications.filter(n=>!n.is_read).length;
-  document.getElementById('badgeN').textContent = unread||'';
-  document.getElementById('badgeN').style.display = unread ? '' : 'none';
-  document.getElementById('notifDot').style.display = unread ? '' : 'none';
-  if(document.getElementById('page-notifications').classList.contains('active')) renderNotifications();
-}
-
-// ════════════════════════════════════════
-//  STATUS HELPERS
-// ════════════════════════════════════════
-function sb(s){
-  return {
-    delivered:{c:'b-ok',t:'تم التسليم ✅'},
-    transit:{c:'b-w',t:'في الطريق 🚚'},
-    pending:{c:'b-p',t:'في الانتظار ⏳'},
-    returned:{c:'b-e',t:'مرتجع ↩️'}
-  }[s]||{c:'b-p',t:s};
-}
-function agSt(s){ return {online:'نشط',busy:'مشغول',offline:'غير متصل'}[s]||s; }
-function agDot(s){ return {online:'on',busy:'busy',offline:'off'}[s]||'off'; }
-function agBadge(s){ return {online:'b-ok',busy:'b-w',offline:'b-e'}[s]||'b-e'; }
-function timeAgo(ts){
-  const d = new Date(ts), n = new Date();
-  const diff = Math.floor((n-d)/1000);
-  if(diff<60) return 'الآن';
-  if(diff<3600) return `منذ ${Math.floor(diff/60)} دقيقة`;
-  if(diff<86400) return `منذ ${Math.floor(diff/3600)} ساعة`;
-  return `منذ ${Math.floor(diff/86400)} يوم`;
-}
-
-// ════════════════════════════════════════
-//  DASHBOARD
-// ════════════════════════════════════════
-function renderDashboard(){
-  const orders = CACHE.orders;
-  const agents = CACHE.agents;
-  const merchants = CACHE.merchants;
-  const today = orders.filter(o=>o.created_at?.startsWith(new Date().toISOString().split('T')[0]));
-  const revenue = orders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(+o.fee||0),0);
-  const activeAgents = agents.filter(a=>a.status==='online'||a.status==='busy').length;
-  const delivered = orders.filter(o=>o.status==='delivered').length;
-  const rate = orders.length ? Math.round(delivered/orders.length*100) : 0;
-  const pending = orders.filter(o=>o.status==='transit'||o.status==='pending').length;
-  document.getElementById('badgeO').textContent = pending||'';
-  document.getElementById('badgeO').style.display = pending ? '' : 'none';
-  document.getElementById('mapCount').textContent = activeAgents + ' نشط';
-
-  document.getElementById('dashStats').innerHTML = `
-    <div class="sc g" onclick="nav(document.querySelector('[data-page=orders]'))">
-      <div class="sct"><div class="sci g">📦</div><span class="tr2 up">▲ 12%</span></div>
-      <div class="sv">${orders.length.toLocaleString()}</div><div class="sl">إجمالي الشحنات</div>
-      <div class="ss">${delivered} مكتملة · ${pending} جارية</div>
-    </div>
-    <div class="sc o" onclick="nav(document.querySelector('[data-page=finance]'))">
-      <div class="sct"><div class="sci o">💵</div><span class="tr2 up">▲ 8.7%</span></div>
-      <div class="sv">${revenue.toLocaleString()}</div><div class="sl">الإيرادات (د.ل)</div>
-      <div class="ss">من رسوم التوصيل</div>
-    </div>
-    <div class="sc p" onclick="nav(document.querySelector('[data-page=agents]'))">
-      <div class="sct"><div class="sci p">🛵</div><span class="tr2 up">▲ 3%</span></div>
-      <div class="sv">${activeAgents}</div><div class="sl">المناديب النشطون</div>
-      <div class="ss">من أصل ${agents.length} مندوب</div>
-    </div>
-    <div class="sc gd" onclick="nav(document.querySelector('[data-page=reports]'))">
-      <div class="sct"><div class="sci gd">🏪</div><span class="tr2 ${rate>=90?'up':'dn'}">${rate>=90?'▲':'▼'} ${rate}%</span></div>
-      <div class="sv">${rate}%</div><div class="sl">نسبة التسليم الناجح</div>
-      <div class="ss">${orders.filter(o=>o.status==='returned').length} مرتجع</div>
-    </div>
-  `;
-  renderDashOrders();
-  renderDashAgents();
-  renderWeekChart();
-  renderFinSummary();
-}
-
-function renderDashOrders(filter='all'){
-  const rows = CACHE.orders.filter(o=>filter==='all'||o.status===filter).slice(0,8);
-  document.getElementById('lastUpd').textContent = 'تحديث: '+new Date().toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
-  const el=document.getElementById('dashOT');
-  if(!rows.length){el.innerHTML='<div class="empty"><div>📭</div><p>لا توجد شحنات</p></div>';return;}
-  el.innerHTML = rows.map(o=>{
-    const b=sb(o.status);
-    return `<div class="tr" style="grid-template-columns:105px 1fr 120px 105px 90px 80px">
-      <span class="oid">${o.id}</span>
-      <div><div style="font-weight:600;font-size:13px">${o.merchant_name}</div><div class="sub">${o.recipient}</div></div>
-      <span style="font-size:13px">${o.area}</span>
-      <span class="badge ${b.c}">${b.t}</span>
-      <span class="amt">${o.amount} د.ل</span>
-      <div class="acts">
-        <div class="act" onclick="viewOrder('${o.id}')" title="تفاصيل">👁️</div>
-        <div class="act" onclick="changeStatus('${o.id}')" title="تغيير الحالة">🔄</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function renderDashAgents(){
-  const el=document.getElementById('dashAgents');
-  const list = CACHE.agents.filter(a=>a.status!=='offline').slice(0,5);
-  if(!list.length){el.innerHTML='<div class="empty"><div>🛵</div><p>لا يوجد مناديب نشطون</p></div>';return;}
-  el.innerHTML = list.map(a=>`
-    <div class="agi" onclick="viewAgent('${a.id}')">
-      <div class="agav" style="background:${a.color}22;color:${a.color}">
-        ${a.name.charAt(0)}<div class="odot ${agDot(a.status)}"></div>
-      </div>
-      <div class="agn"><h4>${a.name}</h4><span>${a.area} · ${a.vehicle}</span></div>
-      <span class="agc">${a.orders_count}</span>
-    </div>
-  `).join('');
-}
-
-function renderWeekChart(){
-  const vals=[850,920,780,1100,960,1284,430];
-  const days=['سبت','أحد','إثنين','ثلاث','أربع','خميس','جمعة'];
-  const max=Math.max(...vals);
-  document.getElementById('wChart').innerHTML = days.map((d,i)=>`
-    <div class="bw"><div class="bar" style="height:${(vals[i]/max)*100}%" title="${d}: ${vals[i]}"></div><span class="bl">${d}</span></div>
-  `).join('');
-}
-
-function renderFinSummary(){
-  const revenue = CACHE.orders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(+o.fee||0),0);
-  const merchantBal = CACHE.merchants.reduce((s,m)=>s+(+m.balance||0),0);
-  const agentPay = CACHE.agents.reduce((s,a)=>s+(+a.orders_count*20)+(+a.salary||800),0);
-  document.getElementById('finSummary').innerHTML = `
-    <div class="fi"><div class="fi-l"><div class="fi-ico" style="background:rgba(16,185,129,.1)">💵</div><div><h4>إيرادات رسوم التوصيل</h4><span>مكتملة</span></div></div><div class="fi-a pos">+${revenue.toLocaleString()} د.ل</div></div>
-    <div class="fi"><div class="fi-l"><div class="fi-ico" style="background:rgba(245,158,11,.1)">💳</div><div><h4>مستحقات التجار</h4><span>في انتظار التحويل</span></div></div><div class="fi-a w">${merchantBal.toLocaleString()} د.ل</div></div>
-    <div class="fi"><div class="fi-l"><div class="fi-ico" style="background:rgba(124,58,237,.1)">🛵</div><div><h4>رواتب المناديب</h4><span>هذا الشهر</span></div></div><div class="fi-a neg">-${agentPay.toLocaleString()} د.ل</div></div>
-    <div class="fi"><div class="fi-l"><div class="fi-ico" style="background:rgba(0,212,170,.1)">📊</div><div><h4>صافي الربح</h4><span>تقديري</span></div></div><div class="fi-a pos">+${Math.max(0,revenue-agentPay).toLocaleString()} د.ل</div></div>
-  `;
-}
-
-// ════════════════════════════════════════
-//  ORDERS PAGE
-// ════════════════════════════════════════
-function filterDash(el,f){
-  document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active'); renderDashOrders(f);
-}
-
-async function loadOrders(){
-  const fs = document.getElementById('fStatus')?.value||'';
-  const fa = document.getElementById('fAgent')?.value||'';
-  const q = document.getElementById('srch')?.value?.toLowerCase()||'';
-  let rows = CACHE.orders.filter(o=>{
-    if(fs && o.status!==fs) return false;
-    if(fa && o.agent_name!==fa) return false;
-    if(q) return o.id?.toLowerCase().includes(q)||o.merchant_name?.toLowerCase().includes(q)||o.recipient?.toLowerCase().includes(q)||o.area?.toLowerCase().includes(q);
-    return true;
-  });
-  document.getElementById('ordCnt').textContent = rows.length + ' شحنة';
-  document.getElementById('ordTitle').textContent = `الشحنات (${rows.length})`;
-  document.getElementById('ordUpd').textContent = new Date().toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
-  const el=document.getElementById('ordersT');
-  if(!rows.length){el.innerHTML='<div class="empty"><div>📭</div><p>لا توجد نتائج</p></div>';return;}
-  el.innerHTML = rows.map(o=>{
-    const b=sb(o.status);
-    return `<div class="tr" style="grid-template-columns:105px 1fr 120px 105px 90px 110px">
-      <span class="oid">${o.id}</span>
-      <div><div style="font-weight:600">${o.merchant_name}</div><div class="sub">${o.recipient} · ${o.area}</div></div>
-      <span>${o.area}</span>
-      <span class="badge ${b.c}">${b.t}</span>
-      <span class="amt">${o.amount} د.ل</span>
-      <div class="acts">
-        <div class="act" onclick="viewOrder('${o.id}')" title="تفاصيل">👁️</div>
-        <div class="act" onclick="changeStatus('${o.id}')" title="تغيير الحالة">🔄</div>
-        <div class="act r" onclick="deleteOrder('${o.id}')" title="حذف">🗑️</div>
-      </div>
-    </div>`;
-  }).join('');
-  // populate agent filter
-  const names=[...new Set(CACHE.agents.map(a=>a.name))];
-  const sel=document.getElementById('fAgent');
-  const cur=sel.value;
-  sel.innerHTML='<option value="">كل المناديب</option>'+names.map(n=>`<option ${n===cur?'selected':''}>${n}</option>`).join('');
-}
-
-function refreshOrdersIfOpen(){
-  if(document.getElementById('page-orders').classList.contains('active')) loadOrders();
-}
-
-async function viewOrder(id){
-  const o=CACHE.orders.find(x=>x.id===id);if(!o) return;
-  const b=sb(o.status);
-  document.getElementById('od-ttl').innerHTML=`📦 ${o.id}`;
-  document.getElementById('od-body').innerHTML=`
-    <div class="odr"><span class="odl">المستلم</span><span class="odv">${o.recipient}</span></div>
-    <div class="odr"><span class="odl">الهاتف</span><span class="odv">${o.phone}</span></div>
-    <div class="odr"><span class="odl">العنوان</span><span class="odv">${o.address}</span></div>
-    <div class="odr"><span class="odl">المنطقة</span><span class="odv">${o.area}</span></div>
-    <div class="odr"><span class="odl">التاجر</span><span class="odv">${o.merchant_name}</span></div>
-    <div class="odr"><span class="odl">المندوب</span><span class="odv">${o.agent_name||'لم يُعين'}</span></div>
-    <div class="odr"><span class="odl">الحالة</span><span class="badge ${b.c}">${b.t}</span></div>
-    <div class="odr"><span class="odl">مبلغ التحصيل</span><span class="odv amt">${o.amount} د.ل</span></div>
-    <div class="odr"><span class="odl">رسوم التوصيل</span><span class="odv">${o.fee} د.ل</span></div>
-    <div class="odr"><span class="odl">ملاحظات</span><span class="odv">${o.notes||'—'}</span></div>
-    <div class="odr" style="border:none"><span class="odl">التاريخ</span><span class="odv">${new Date(o.created_at).toLocaleDateString('ar-LY')}</span></div>
-  `;
-  document.getElementById('od-acts').innerHTML=`
-    <button class="bp" onclick="nextStatus('${id}');closeModal('orderDetail')">🔄 تغيير الحالة</button>
-    <button class="bs" onclick="closeModal('orderDetail')">إغلاق</button>
-  `;
-  openModal('orderDetail');
-}
-
-async function nextStatus(id){
-  const o=CACHE.orders.find(x=>x.id===id);if(!o) return;
-  const nx={pending:'transit',transit:'delivered',delivered:'returned',returned:'pending'};
-  const nxt={pending:'في الطريق',transit:'تم التسليم',delivered:'مرتجع',returned:'في الانتظار'};
-  const ns=nx[o.status], nst=nxt[o.status];
-  const {error}=await SB.from('orders').update({status:ns,status_text:nst,updated_at:new Date().toISOString()}).eq('id',id);
-  if(error){toast('❌ خطأ في التحديث','err');return;}
-  o.status=ns; o.status_text=nst;
-  await addNotif('🔄',`rgba(0,212,170,0.1)`,`${id}: تم تغيير الحالة إلى "${nst}"`);
-  renderDashboard(); loadOrders();
-  toast(`✅ ${id}: الحالة → ${nst}`);
-}
-
-async function deleteOrder(id){
-  cnf('🗑️','حذف الشحنة',`هل تريد حذف ${id}؟`, async ()=>{
-    const {error}=await SB.from('orders').delete().eq('id',id);
-    if(error){toast('❌ خطأ في الحذف','err');return;}
-    CACHE.orders=CACHE.orders.filter(x=>x.id!==id);
-    renderDashboard(); loadOrders();
-    toast(`🗑️ تم حذف ${id}`);
-  });
-}
-
-async function submitOrder(){
-  const rec=document.getElementById('oRec').value.trim();
-  const ph=document.getElementById('oPh').value.trim();
-  const addr=document.getElementById('oAddr').value.trim();
-  const areaSel=document.getElementById('oArea');
-  const mSel=document.getElementById('oMerch');
-  if(!rec||!ph||!addr||!areaSel.value||!mSel.value){toast('⚠️ يرجى ملء جميع الحقول المطلوبة','warn');return;}
-  const merchant=CACHE.merchants.find(m=>m.id===mSel.value);
-  // Get next order number
-  const {data:cnt}=await SB.from('order_counter').select('next_num').eq('id',1).single();
-  const num = (cnt?.next_num||100);
-  const oid = `WST-${String(num).padStart(5,'0')}`;
-  await SB.from('order_counter').update({next_num:num+1}).eq('id',1);
-  const newO={
-    id:oid, merchant_id:merchant?.id||null,
-    merchant_name:merchant?.name||mSel.options[mSel.selectedIndex].text,
-    recipient:rec, phone:ph, address:addr,
-    area:areaSel.options[areaSel.selectedIndex].text.split('—')[0].trim(),
-    agent_id:null, agent_name:'',
-    status:'pending', status_text:'في الانتظار',
-    amount:+document.getElementById('oAmt').value||0,
-    fee:+document.getElementById('oFee').value||25,
-    notes:document.getElementById('oNotes').value,
-  };
-  const {error}=await SB.from('orders').insert(newO);
-  if(error){toast('❌ خطأ: '+error.message,'err');return;}
-  CACHE.orders.unshift({...newO, created_at:new Date().toISOString()});
-  await addNotif('📦','rgba(0,212,170,0.1)',`شحنة جديدة ${oid} — ${rec}`);
-  closeModal('newOrder');
-  renderDashboard();
-  toast(`✅ تم إنشاء الشحنة ${oid}!`);
-  ['oRec','oPh','oAddr','oNotes'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('oAmt').value='0';
-  document.getElementById('oFee').value='25';
-  document.getElementById('oArea').selectedIndex=0;
-  document.getElementById('oMerch').selectedIndex=0;
-  document.getElementById('oTotal').textContent='25 د.ل';
-}
-
-function onAreaChange(){
-  const sel=document.getElementById('oArea');
-  const txt=sel.options[sel.selectedIndex]?.text||'';
-  const p=CACHE.pricing.find(x=>txt.includes(x.area));
-  if(p) document.getElementById('oFee').value=p.price;
-  calcTotal();
-}
-function calcTotal(){
-  const a=+document.getElementById('oAmt').value||0;
-  const f=+document.getElementById('oFee').value||0;
-  document.getElementById('oTotal').textContent=(a+f)+' د.ل';
-}
 
 // ════════════════════════════════════════
 //  MERCHANTS PAGE
