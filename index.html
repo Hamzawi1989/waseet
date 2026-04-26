@@ -1406,7 +1406,13 @@ function openModal(id){
   }
   if(id==='newMerchant'||id==='newAgent'){populateCitySelects();populateBranchSelects();}
   if(id==='newBranch') populateCitySelects();
-  if(id==='newArea') populateCitySelects();
+  if(id==='newArea'){
+    const ac=document.getElementById('areaCity');
+    if(ac){
+      const cities=window._cities||[];
+      ac.innerHTML='<option value="">اختر المدينة...</option>'+cities.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+    }
+  }
   document.getElementById('ov-'+id)?.classList.add('show');
 }
 
@@ -1941,7 +1947,10 @@ function onPageOpen(pid){
   if(pid==='merchants') renderMerchantsPage();
   if(pid==='agents') renderAgentsPage();
   if(pid==='finance') renderFinancePage();
-  if(pid==='pricing') renderPricingPage();
+  if(pid==='pricing'){
+    _pricingFilter='';
+    renderPricingPage();
+  }
   if(pid==='notifications') renderNotifications();
   if(pid==='reports') renderReportsPage();
   if(pid==='branches') renderBranchesPage();
@@ -2062,6 +2071,151 @@ async function refreshDashboard(){
   renderDashboard();
 }
 
+
+// ════════════════════════════════════════
+//  CITIES & PRICING FUNCTIONS
+// ════════════════════════════════════════
+
+async function submitCity(){
+  const name = document.getElementById('cityName')?.value?.trim();
+  const region = document.getElementById('cityRegion')?.value || 'غرب ليبيا';
+  if(!name){ toast('⚠️ أدخل اسم المدينة','warn'); return; }
+  
+  try {
+    const {data, error} = await SB.from('cities').insert({name, region}).select().single();
+    if(error) throw error;
+    if(!window._cities) window._cities = [];
+    window._cities.push(data);
+    toast('✅ تمت إضافة المدينة "' + name + '"!', 'ok');
+  } catch(e) {
+    // Add locally if table doesn't exist
+    if(!window._cities) window._cities = [];
+    window._cities.push({id: Date.now().toString(), name, region});
+    toast('✅ تمت إضافة المدينة "' + name + '"!', 'ok');
+  }
+  
+  populateCitySelects();
+  renderPricingPage();
+  closeModal('newCity');
+  document.getElementById('cityName').value = '';
+}
+
+async function submitArea(){
+  const name = document.getElementById('areaName')?.value?.trim();
+  const price = +(document.getElementById('areaPrice')?.value || 25);
+  const city = document.getElementById('areaCity')?.value || '';
+  
+  if(!name){ toast('⚠️ أدخل اسم المنطقة','warn'); return; }
+  if(!city){ toast('⚠️ اختر المدينة أولاً','warn'); return; }
+  
+  const {data, error} = await SB.from('pricing').insert({area: name, price, city}).select().single();
+  if(error){ toast('❌ ' + error.message, 'err'); return; }
+  
+  CACHE.pricing.push(data);
+  renderPricingPage();
+  closeModal('newArea');
+  toast('✅ تمت إضافة المنطقة "' + name + '"!', 'ok');
+  document.getElementById('areaName').value = '';
+  document.getElementById('areaPrice').value = '25';
+}
+
+async function deleteCity(id){
+  cnf('🗑️','حذف المدينة','هل تريد حذف هذه المدينة؟ سيتم حذف مناطقها أيضاً.', async()=>{
+    try { await SB.from('cities').delete().eq('id', id); } catch(e){}
+    window._cities = (window._cities||[]).filter(x=>x.id!==id);
+    populateCitySelects();
+    renderPricingPage();
+    toast('🗑️ تم حذف المدينة');
+  });
+}
+
+async function deleteArea(id){
+  cnf('🗑️','حذف المنطقة','هل تريد حذف هذه المنطقة؟', async()=>{
+    const {error} = await SB.from('pricing').delete().eq('id', id);
+    if(error){ toast('❌ '+error.message,'err'); return; }
+    CACHE.pricing = CACHE.pricing.filter(x=>x.id!==id);
+    renderPricingPage();
+    toast('🗑️ تم حذف المنطقة');
+  });
+}
+
+async function editAreaPrice(id, newPrice){
+  const price = +newPrice;
+  if(isNaN(price)||price<0) return;
+  const {error} = await SB.from('pricing').update({price, updated_at: new Date().toISOString()}).eq('id', id);
+  if(error){ toast('❌ '+error.message,'err'); return; }
+  const p = CACHE.pricing.find(x=>x.id===id);
+  if(p) p.price = price;
+}
+
+function renderCitiesTable(){
+  const el = document.getElementById('citiesT');
+  if(!el) return;
+  const cities = window._cities||[];
+  if(!cities.length){
+    el.innerHTML='<div class="empty"><div>🏙️</div><p>لا توجد مدن — أضف مدينة الآن</p></div>';
+    return;
+  }
+  el.innerHTML = cities.map(c=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.03)">
+      <div>
+        <div style="font-weight:600;font-size:13px">🏙️ ${c.name}</div>
+        <div style="font-size:10px;color:var(--txt3)">${c.region||'—'} · ${CACHE.pricing.filter(p=>p.city===c.name).length} منطقة</div>
+      </div>
+      <div style="display:flex;gap:5px;align-items:center">
+        <button onclick="filterPricingByCity('${c.name}')" style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldborder);padding:4px 9px;border-radius:7px;font-size:10px;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:600">🗺️ مناطقها</button>
+        <div class="act r" onclick="deleteCity('${c.id}')" title="حذف">🗑️</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+let _pricingFilter = '';
+function filterPricingByCity(city){
+  _pricingFilter = city;
+  renderPricingPage();
+}
+
+function renderPricingPage(){
+  const el = document.getElementById('pricingT');
+  if(!el) return;
+  
+  let areas = CACHE.pricing;
+  if(_pricingFilter) areas = areas.filter(p=>p.city===_pricingFilter);
+  
+  // Header with filter indicator
+  const headerEl = document.querySelector('#page-pricing .ph h3');
+  if(headerEl) headerEl.innerHTML = _pricingFilter ? `🗺️ مناطق ${_pricingFilter} <button onclick="_pricingFilter='';renderPricingPage()" style="background:rgba(239,68,68,0.1);color:var(--err);border:none;padding:2px 8px;border-radius:6px;font-size:10px;cursor:pointer;font-family:'Cairo',sans-serif;margin-right:6px">✕ كل المناطق</button>` : '🗺️ أسعار التوصيل';
+  
+  if(!areas.length){
+    el.innerHTML = '<div class="empty"><div>🗺️</div><p>' + (_pricingFilter?'لا توجد مناطق في '+_pricingFilter:'لا توجد مناطق — أضف منطقة') + '</p></div>';
+  } else {
+    el.innerHTML = areas.map(p=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.03)">
+        <div>
+          <div style="font-weight:600;font-size:12px">📍 ${p.area}</div>
+          ${p.city?`<div style="font-size:10px;color:var(--txt3)">🏙️ ${p.city}</div>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:7px">
+          <input class="pi" value="${p.price}" type="number" min="0" 
+            onchange="editAreaPrice('${p.id}',this.value)"
+            style="width:65px;text-align:center;background:var(--bg3);border:1px solid var(--border);color:var(--gold);padding:5px 6px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:12px;outline:none;transition:border-color .2s"
+            onfocus="this.style.borderColor='var(--gold)'"
+            onblur="this.style.borderColor='var(--border)'">
+          <span style="font-size:11px;color:var(--txt3)">د.ل</span>
+          <div class="act r" onclick="deleteArea('${p.id}')" title="حذف">🗑️</div>
+        </div>
+      </div>
+    `).join('');
+  }
+  
+  renderCitiesTable();
+}
+
+async function savePricing(){
+  toast('✅ تم حفظ الأسعار تلقائياً عند التعديل', 'ok');
+}
+
 </script>
 
 </body>
@@ -2114,12 +2268,20 @@ async function refreshDashboard(){
 <!-- NEW AREA MODAL -->
 
 <div class="ov" id="ov-newArea">
-  <div class="modal" style="width:400px">
+  <div class="modal" style="width:420px">
     <button class="mc" onclick="closeModal('newArea')">✕</button>
     <h2>📍 منطقة توصيل جديدة</h2>
-    <div class="fg"><label class="fl">المدينة</label><select class="fi2" id="areaCity"><option value="">اختر المدينة...</option></select></div>
+    <div class="fg">
+      <label class="fl">المدينة * (اختر أولاً)</label>
+      <select class="fi2" id="areaCity">
+        <option value="">اختر المدينة...</option>
+      </select>
+    </div>
     <div class="fg"><label class="fl">اسم المنطقة *</label><input class="fi2" id="areaName" placeholder="مثال: جنزور الشمالية"></div>
-    <div class="fg"><label class="fl">سعر التوصيل (د.ل) *</label><input class="fi2" id="areaPrice" type="number" value="25" min="0"></div>
+    <div class="fg">
+      <label class="fl">سعر التوصيل (د.ل) *</label>
+      <input class="fi2" id="areaPrice" type="number" value="25" min="0" placeholder="25">
+    </div>
     <div class="mac">
       <button class="bp" onclick="submitArea()">✅ إضافة المنطقة</button>
       <button class="bs" onclick="closeModal('newArea')">إلغاء</button>
