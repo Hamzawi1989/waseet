@@ -2131,25 +2131,20 @@ async function submitArea(){
   if(!name){ toast('⚠️ أدخل اسم المنطقة','warn'); return; }
   if(!city){ toast('⚠️ اختر المدينة أولاً','warn'); return; }
   
-  const {data, error} = await SB.from('pricing').insert({area: name, price, city}).select().single();
-  if(error){ toast('❌ ' + error.message, 'err'); return; }
+  const branchId = (typeof _currentPricingBranch !== 'undefined') ? _currentPricingBranch : '';
+  
+  const {data, error} = await SB.from('pricing').insert({
+    area: name, price, city,
+    branch_id: branchId || null
+  }).select().single();
+  if(error){ toast('❌ '+error.message,'err'); return; }
   
   CACHE.pricing.push(data);
   renderPricingPage();
   closeModal('newArea');
-  toast('✅ تمت إضافة المنطقة "' + name + '"!', 'ok');
+  toast('✅ تمت إضافة المنطقة "' + name + '"' + (branchId?' للفرع':' (عامة)') + '!', 'ok');
   document.getElementById('areaName').value = '';
   document.getElementById('areaPrice').value = '25';
-}
-
-async function deleteCity(id){
-  cnf('🗑️','حذف المدينة','هل تريد حذف هذه المدينة؟ سيتم حذف مناطقها أيضاً.', async()=>{
-    try { await SB.from('cities').delete().eq('id', id); } catch(e){}
-    window._cities = (window._cities||[]).filter(x=>x.id!==id);
-    populateCitySelects();
-    renderPricingPage();
-    toast('🗑️ تم حذف المدينة');
-  });
 }
 
 async function deleteArea(id){
@@ -2305,31 +2300,6 @@ function renderPricingPage(){
   if(typeof renderCitiesTable === 'function') renderCitiesTable();
 }
 
-// Override submitArea to include branch_id
-const _origSubmitArea = submitArea;
-submitArea = async function(){
-  const name = document.getElementById('areaName')?.value?.trim();
-  const price = +(document.getElementById('areaPrice')?.value || 25);
-  const city = document.getElementById('areaCity')?.value || '';
-  
-  if(!name){ toast('⚠️ أدخل اسم المنطقة','warn'); return; }
-  if(!city){ toast('⚠️ اختر المدينة أولاً','warn'); return; }
-  
-  const newArea = {
-    area: name, price, city,
-    branch_id: _currentPricingBranch || null
-  };
-  
-  const {data, error} = await SB.from('pricing').insert(newArea).select().single();
-  if(error){ toast('❌ '+error.message,'err'); return; }
-  
-  CACHE.pricing.push(data);
-  renderPricingPage();
-  closeModal('newArea');
-  toast(`✅ تمت إضافة المنطقة "${name}"${_currentPricingBranch?' للفرع':' (عامة)'}!`, 'ok');
-  document.getElementById('areaName').value = '';
-  document.getElementById('areaPrice').value = '25';
-};
 
 // onCityChange for order form - use branch pricing if available
 function onCityChange(){
