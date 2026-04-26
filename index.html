@@ -448,6 +448,17 @@ box-shadow:-4px 0 20px rgba(0,0,0,0.6);
 
 </head>
 <body>
+<script>
+// Immediately fix layout before anything renders
+(function(){
+  var style = document.createElement('style');
+  var w = window.innerWidth;
+  if(w <= 900){
+    style.textContent = '#sidebar{display:none!important}#main{margin-right:0!important;width:100vw!important}';
+  }
+  document.head.appendChild(style);
+})();
+</script>
 
 <!-- LOADING -->
 
@@ -1635,28 +1646,29 @@ function onPageOpen(pid){
 
 function toggleSidebar(){
   const sb = document.getElementById('sidebar');
-  const isMobile = window.innerWidth <= 768;
+  const isMobile = window.innerWidth <= 900;
   if(isMobile){
-    const isOpen = sb.classList.contains('mobile-open');
+    const isOpen = sb.style.display === 'flex';
     if(isOpen){
-      sb.classList.remove('mobile-open');
-      sb.style.right = '-270px';
+      sb.style.display = 'none';
+      document.getElementById('main').style.marginRight = '0';
+      document.getElementById('main').style.width = '100vw';
       const ov = document.getElementById('sbOverlay');
       if(ov) ov.remove();
     } else {
-      sb.classList.add('mobile-open');
-      sb.style.right = '0';
+      sb.style.cssText = 'display:flex!important;position:fixed!important;top:0!important;right:0!important;width:260px!important;height:100vh!important;z-index:9999!important;';
       const overlay = document.createElement('div');
       overlay.id = 'sbOverlay';
-      overlay.style.cssText = 'position:fixed;inset:0;z-index:9989;background:rgba(0,0,0,0.6);';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.6);';
       overlay.onclick = ()=>{
-        sb.classList.remove('mobile-open');
-        sb.style.right='-270px';
+        sb.style.display = 'none';
         overlay.remove();
       };
       document.body.appendChild(overlay);
     }
   } else {
+    sb.style.cssText = '';
+    document.getElementById('main').style.cssText = '';
     sb.classList.toggle('collapsed');
   }
 }
@@ -1720,10 +1732,14 @@ function startClock(){
 // ════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async ()=>{
   // Responsive sidebar init
-  if(window.innerWidth <= 768){
-    // Mobile: sidebar hidden via CSS
-  } else if(window.innerWidth <= 1024){
-    document.getElementById('sidebar').classList.add('collapsed');
+  const sbEl = document.getElementById('sidebar');
+  const mainEl = document.getElementById('main');
+  if(window.innerWidth <= 900){
+    sbEl.style.display = 'none';
+    mainEl.style.marginRight = '0';
+    mainEl.style.width = '100vw';
+  } else if(window.innerWidth <= 1200){
+    sbEl.classList.add('collapsed');
   }
   // close overlays on bg click
   document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o) o.classList.remove('show');}));
