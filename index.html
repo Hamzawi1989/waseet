@@ -922,13 +922,10 @@ async function loadNotifications(){
 //  STATUS HELPERS
 // ════════════════════════════════════════
 function sb(s){
-  return {
-    delivered:{c:'b-ok',t:'تم التسليم ✅'},
-    transit:{c:'b-w',t:'في الطريق 🚚'},
-    pending:{c:'b-p',t:'في الانتظار ⏳'},
-    returned:{c:'b-e',t:'مرتجع ↩️'}
-  }[s]||{c:'b-p',t:s};
+  const st = getOrderStatus(s);
+  return { c: st.cls, t: st.icon + ' ' + st.ar };
 }
+
 function agSt(s){ return {online:'نشط',busy:'مشغول',offline:'غير متصل'}[s]||s; }
 function agDot(s){ return {online:'on',busy:'busy',offline:'off'}[s]||'off'; }
 function agBadge(s){ return {online:'b-ok',busy:'b-w',offline:'b-e'}[s]||'b-e'; }
@@ -987,7 +984,13 @@ function renderDashboard(){
 }
 
 function renderDashOrders(filter='all'){
-  const rows = CACHE.orders.filter(o=>filter==='all'||o.status===filter).slice(0,8);
+  const rows = CACHE.orders.filter(o=>{
+    if(filter==='all') return true;
+    if(o.status===filter) return true;
+    if(filter==='in_delivery' && o.status==='transit') return true;
+    if(filter==='waiting_approval' && o.status==='pending') return true;
+    return false;
+  }).slice(0,8);
   document.getElementById('lastUpd').textContent = 'تحديث: '+new Date().toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
   const el=document.getElementById('dashOT');
   if(!rows.length){el.innerHTML='<div class="empty"><div>📭</div><p>لا توجد شحنات</p></div>';return;}
@@ -1056,7 +1059,11 @@ async function loadOrders(){
   const fa = document.getElementById('fAgent')?.value||'';
   const q = document.getElementById('srch')?.value?.toLowerCase()||'';
   let rows = CACHE.orders.filter(o=>{
-    if(fs && o.status!==fs) return false;
+    if(fs){
+      // Map legacy statuses
+      const mapped = o.status==='pending'?'waiting_approval': o.status==='transit'?'in_delivery': o.status;
+      if(mapped!==fs && o.status!==fs) return false;
+    }
     if(fa && o.agent_name!==fa) return false;
     if(q) return o.id?.toLowerCase().includes(q)||o.merchant_name?.toLowerCase().includes(q)||o.recipient?.toLowerCase().includes(q)||o.area?.toLowerCase().includes(q);
     return true;
