@@ -809,11 +809,6 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
   </div>
 </div>
 
-<div class="fg2">
-  <div class="fg"><label class="fl">رسوم التوصيل (د.ل)</label><input class="fi2" id="mFee" value="25" type="number"></div>
-  <div class="fg"><label class="fl">طريقة الدفع</label><select class="fi2" id="mPay"><option>نقداً عند التسليم</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option></select></div>
-</div>
-
 <div class="mac">
   <button class="bp" onclick="submitMerchant()">✅ حفظ التاجر</button>
   <button class="bs" onclick="closeModal('newMerchant')">إلغاء</button>
@@ -1857,9 +1852,6 @@ async function submitMerchant(){
   const addr   = document.getElementById('mAddr')?.value.trim()||'';
   const pass   = document.getElementById('mPass')?.value.trim();
   const pass2  = document.getElementById('mPass2')?.value.trim();
-  const fee    = +(document.getElementById('mFee')?.value||25);
-  const pay    = document.getElementById('mPay')?.value||'نقداً';
-
   if(!name||!owner||!phone){toast('⚠️ اسم المتجر والمالك والهاتف مطلوبة','warn');return;}
   if(!pass){toast('⚠️ أدخل كلمة المرور','warn');return;}
   if(pass!==pass2){toast('❌ كلمتا المرور غير متطابقتين','err');return;}
@@ -1874,7 +1866,7 @@ async function submitMerchant(){
     branch_id: branchId,
     address: addr,
     password_hash: pass,
-    fee, pay_method: pay,
+    fee: 0, pay_method: 'نقداً',
     balance:0, orders_count:0, status:'active'
   }).select().single();
 
