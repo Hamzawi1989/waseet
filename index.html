@@ -1118,58 +1118,76 @@ function sb(s){ const st=getOrderStatus(s); return {c:st.cls, t:st.icon+' '+st.a
 
 function showStatusMenu(id, event){
   event.stopPropagation();
-  const o=CACHE.orders.find(x=>x.id===id);if(!o) return;
+  const o = CACHE.orders.find(x => x.id === id);
+  if(!o) return;
   document.getElementById('statusMenu')?.remove();
-  const menu=document.createElement('div');
-  menu.id='statusMenu';
-  const rect=event.currentTarget.getBoundingClientRect();
-  menu.style.cssText='position:fixed;background:var(--bg2);border:1px solid var(--goldborder);border-radius:14px;padding:8px;z-index:5000;min-width:240px;box-shadow:0 20px 60px rgba(0,0,0,.9);top:'+(Math.min(rect.bottom+6,window.innerHeight-300))+'px;right:'+(Math.max(8,window.innerWidth-rect.right))+'px';
-  const s=o.status;
-  const st=getOrderStatus(s);
-  const branchName=(window._branches||[]).find(function(b){return b.id===o.branch_id;})?.name||'—';
   
-  let hdr='<div style="padding:8px 12px 10px;border-bottom:1px solid var(--border);margin-bottom:6px">';
-  hdr+='<div style="font-family:Tajawal,sans-serif;font-weight:800;font-size:16px;color:var(--gold)">#'+String(o.order_number||0).padStart(6,'0')+'</div>';
-  hdr+='<div style="font-size:11px;color:var(--txt3);margin-top:2px">'+st.icon+' '+st.ar+' · '+(o.recipient||'—')+'</div>';
-  hdr+='<div style="font-size:10px;color:var(--txt3);margin-top:1px">🏢 '+branchName+'</div></div>';
+  const menu = document.createElement('div');
+  menu.id = 'statusMenu';
+  const el = event.currentTarget || event.target;
+  const rect = el ? el.getBoundingClientRect() : {bottom:200,right:300};
+  const top = Math.min(rect.bottom + 6, window.innerHeight - 320);
+  const right = Math.max(8, window.innerWidth - rect.right);
+  menu.style.cssText = 'position:fixed;background:var(--bg2);border:1px solid var(--goldborder);border-radius:14px;padding:8px;z-index:5000;min-width:250px;box-shadow:0 20px 60px rgba(0,0,0,.95);top:'+top+'px;right:'+right+'px';
   
-  let opts='';
-  if(s==='waiting_approval'||s==='pending'){
-    opts+=mBtn('✅','قبول — انتظار التوصيل','#22c55e','approveOrder("'+id+'")');
-    opts+=mBtn('❌','رفض الشحنة','#ef4444','rejectOrder("'+id+'")');
-  } else if(s==='waiting_delivery'){
-    opts+=mBtn('🛵','تعيين مندوب وإرسال','#d4a017','showAgentSelect("'+id+'")');
-  } else if(s==='in_delivery'||s==='transit'){
-    opts+=mBtn('✅','تم التسليم للزبون','#22c55e','markOrderDelivered("'+id+'")');
-    opts+=mBtn('↩️','مرتجع — تسليم للفرع','#ef4444','markOrderReturned("'+id+'")');
-  } else if(s==='returned'){
-    opts+=mBtn('📥','استلام المرتجع في الفرع','#d4a017','markReturnReceived("'+id+'")');
-    opts+=mBtn('🔄','إعادة إرسال','#3b82f6','reshipsOrder("'+id+'")');
+  const st = getOrderStatus(o.status);
+  const branchName = (window._branches||[]).find(b => b.id === o.branch_id)?.name || '—';
+  
+  // Header
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'padding:8px 12px 10px;border-bottom:1px solid var(--border);margin-bottom:6px';
+  hdr.innerHTML = '<div style="font-family:Tajawal,sans-serif;font-weight:800;font-size:17px;color:var(--gold)">#'+String(o.order_number||0).padStart(6,'0')+'</div>'
+    + '<div style="font-size:11px;color:var(--txt3);margin-top:3px">'+st.icon+' '+st.ar+' · '+(o.recipient||'—')+'</div>'
+    + '<div style="font-size:10px;color:var(--txt3);margin-top:2px">🏢 '+branchName+'</div>';
+  menu.appendChild(hdr);
+  
+  const s = o.status;
+  
+  if(s === 'waiting_approval' || s === 'pending'){
+    addMenuBtn(menu, '✅', 'قبول — انتظار التوصيل', '#22c55e', function(){ approveOrder(id); });
+    addMenuBtn(menu, '❌', 'رفض الشحنة', '#ef4444', function(){ rejectOrder(id); });
+  } else if(s === 'waiting_delivery'){
+    addMenuBtn(menu, '🛵', 'تعيين مندوب وإرسال للتوصيل', '#d4a017', function(){ showAgentSelect(id); });
+  } else if(s === 'in_delivery' || s === 'transit'){
+    addMenuBtn(menu, '✅', 'تم التسليم للزبون', '#22c55e', function(){ markOrderDelivered(id); });
+    addMenuBtn(menu, '↩️', 'مرتجع — تسليم للفرع', '#ef4444', function(){ markOrderReturned(id); });
+  } else if(s === 'returned'){
+    addMenuBtn(menu, '📥', 'استلام المرتجع في الفرع', '#d4a017', function(){ markReturnReceived(id); });
+    addMenuBtn(menu, '🔄', 'إعادة إرسال للتوصيل', '#3b82f6', function(){ reshipsOrder(id); });
   } else {
-    opts='<div style="padding:10px 12px;font-size:12px;color:var(--txt3);text-align:center">✅ هذه الشحنة مكتملة</div>';
+    const done = document.createElement('div');
+    done.style.cssText = 'padding:12px;font-size:12px;color:var(--txt3);text-align:center';
+    done.textContent = '✅ هذه الشحنة مكتملة';
+    menu.appendChild(done);
   }
   
-  menu.innerHTML=hdr+opts;
   document.body.appendChild(menu);
+  
+  // Close on outside click
   setTimeout(function(){
-    document.addEventListener('click',function cl(e){
-      if(!menu.contains(e.target)){menu.remove();document.removeEventListener('click',cl);}
-    });
-  },100);
+    function closeMenu(e){
+      if(!menu.contains(e.target)){
+        menu.remove();
+        document.removeEventListener('click', closeMenu);
+      }
+    }
+    document.addEventListener('click', closeMenu);
+  }, 100);
 }
 
-function mBtn(icon,label,color,action){
-  var d=document.createElement('div');
-  d.style.cssText='display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:'+color+';transition:background .15s';
-  d.innerHTML=icon+' '+label;
-  d.onmouseover=function(){this.style.background='rgba(255,255,255,.07)';};
-  d.onmouseout=function(){this.style.background='';};
-  d.onclick=function(){
-    document.getElementById('statusMenu')?.remove();
-    eval(action);
+function addMenuBtn(menu, icon, label, color, callback){
+  const btn = document.createElement('div');
+  btn.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:'+color+';font-family:Cairo,sans-serif;transition:background .15s';
+  btn.innerHTML = '<span style="font-size:16px">'+icon+'</span><span>'+label+'</span>';
+  btn.onmouseover = function(){ this.style.background='rgba(255,255,255,.07)'; };
+  btn.onmouseout = function(){ this.style.background=''; };
+  btn.onclick = function(){
+    menu.remove();
+    callback();
   };
-  return d.outerHTML;
+  menu.appendChild(btn);
 }
+
 
 
 async function approveOrder(id){
