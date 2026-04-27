@@ -1094,46 +1094,40 @@ function sb(s){ const st=getOrderStatus(s); return {c:st.cls, t:st.icon+' '+st.a
 
 function showStatusMenu(id, event){
   event.stopPropagation();
-  const o=CACHE.orders.find(x=>x.id===id); if(!o) return;
+  const o=CACHE.orders.find(x=>x.id===id);if(!o) return;
   document.getElementById('statusMenu')?.remove();
   const menu=document.createElement('div');
   menu.id='statusMenu';
-  const btn=event.currentTarget;
-  const rect=btn.getBoundingClientRect();
-  // Smart positioning - don't go off screen
-  const topPos=rect.bottom+6;
-  const rightPos=window.innerWidth-rect.right;
-  menu.style.cssText=`position:fixed;background:var(--bg2);border:1px solid var(--goldborder);border-radius:14px;padding:8px;z-index:5000;min-width:240px;box-shadow:0 20px 60px rgba(0,0,0,.9),0 0 0 1px rgba(212,160,23,0.1);top:${Math.min(topPos,window.innerHeight-280)}px;right:${Math.max(8,rightPos)}px`;
+  const rect=event.currentTarget.getBoundingClientRect();
+  menu.style.cssText='position:fixed;background:var(--bg2);border:1px solid var(--goldborder);border-radius:14px;padding:8px;z-index:5000;min-width:240px;box-shadow:0 20px 60px rgba(0,0,0,.9);top:'+(Math.min(rect.bottom+6,window.innerHeight-300))+'px;right:'+(Math.max(8,window.innerWidth-rect.right))+'px';
   const s=o.status;
   const st=getOrderStatus(s);
-  const branchName=(window._branches||[]).find(b=>b.id===o.branch_id)?.name||'—';
+  const branchName=(window._branches||[]).find(function(b){return b.id===o.branch_id;})?.name||'—';
+  
+  let hdr='<div style="padding:8px 12px 10px;border-bottom:1px solid var(--border);margin-bottom:6px">';
+  hdr+='<div style="font-family:Tajawal,sans-serif;font-weight:800;font-size:16px;color:var(--gold)">#'+String(o.order_number||0).padStart(6,'0')+'</div>';
+  hdr+='<div style="font-size:11px;color:var(--txt3);margin-top:2px">'+st.icon+' '+st.ar+' · '+(o.recipient||'—')+'</div>';
+  hdr+='<div style="font-size:10px;color:var(--txt3);margin-top:1px">🏢 '+branchName+'</div></div>';
+  
   let opts='';
-  
-  // Header
-  const header=`<div style="padding:8px 12px 10px;border-bottom:1px solid var(--border);margin-bottom:6px">
-    <div style="font-family:'Tajawal',sans-serif;font-weight:800;font-size:16px;color:var(--gold)">#${String(o.order_number||0).padStart(6,'0')}</div>
-    <div style="font-size:11px;color:var(--txt3);margin-top:2px">${st.icon} ${st.ar} · ${o.recipient||'—'}</div>
-    <div style="font-size:10px;color:var(--txt3);margin-top:1px">🏢 ${branchName}</div>
-  </div>`;
-  
   if(s==='waiting_approval'||s==='pending'){
-    opts+=mBtn('✅','قبول — إلى انتظار التوصيل','#22c55e',`approveOrder('${id}')`);
-    opts+=mBtn('❌','رفض الشحنة','#ef4444',`rejectOrder('${id}')`);
+    opts+=mBtn('✅','قبول — انتظار التوصيل','#22c55e','approveOrder("'+id+'")');
+    opts+=mBtn('❌','رفض الشحنة','#ef4444','rejectOrder("'+id+'")');
   } else if(s==='waiting_delivery'){
-    opts+=mBtn('🛵','تعيين مندوب وإرسال للتوصيل','#d4a017',`showAgentSelect('${id}')`);
+    opts+=mBtn('🛵','تعيين مندوب وإرسال','#d4a017','showAgentSelect("'+id+'")');
   } else if(s==='in_delivery'||s==='transit'){
-    opts+=mBtn('✅','تم التسليم للزبون','#22c55e',`markOrderDelivered('${id}')`);
-    opts+=mBtn('↩️','مرتجع — تسليم للفرع','#ef4444',`markOrderReturned('${id}')`);
+    opts+=mBtn('✅','تم التسليم للزبون','#22c55e','markOrderDelivered("'+id+'")');
+    opts+=mBtn('↩️','مرتجع — تسليم للفرع','#ef4444','markOrderReturned("'+id+'")');
   } else if(s==='returned'){
-    opts+=mBtn('📥','استلام المرتجع في الفرع','#d4a017',`markReturnReceived('${id}')`);
-    opts+=mBtn('🔄','إعادة إرسال للتوصيل','#3b82f6',`reshipsOrder('${id}')`);
+    opts+=mBtn('📥','استلام المرتجع في الفرع','#d4a017','markReturnReceived("'+id+'")');
+    opts+=mBtn('🔄','إعادة إرسال','#3b82f6','reshipsOrder("'+id+'")');
   } else {
     opts='<div style="padding:10px 12px;font-size:12px;color:var(--txt3);text-align:center">✅ هذه الشحنة مكتملة</div>';
   }
   
-  menu.innerHTML=header+opts;
+  menu.innerHTML=hdr+opts;
   document.body.appendChild(menu);
-  setTimeout(()=>{
+  setTimeout(function(){
     document.addEventListener('click',function cl(e){
       if(!menu.contains(e.target)){menu.remove();document.removeEventListener('click',cl);}
     });
@@ -1141,10 +1135,16 @@ function showStatusMenu(id, event){
 }
 
 function mBtn(icon,label,color,action){
-  return `<div onclick="${action};document.getElementById('statusMenu')?.remove()" 
-    style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:${color};transition:background .15s" 
-    onmouseover="this.style.background='rgba(255,255,255,.07)'" 
-    onmouseout="this.style.background=''">${icon} ${label}</div>`;
+  var d=document.createElement('div');
+  d.style.cssText='display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:'+color+';transition:background .15s';
+  d.innerHTML=icon+' '+label;
+  d.onmouseover=function(){this.style.background='rgba(255,255,255,.07)';};
+  d.onmouseout=function(){this.style.background='';};
+  d.onclick=function(){
+    document.getElementById('statusMenu')?.remove();
+    eval(action);
+  };
+  return d.outerHTML;
 }
 
 
@@ -1167,8 +1167,6 @@ function showAgentSelect(orderId){
   // Filter agents by branch - show branch agents first, then all
   const branchAgents=CACHE.agents.filter(a=>a.status!=='offline'&&a.branch_id===o?.branch_id);
   const otherAgents=CACHE.agents.filter(a=>a.status!=='offline'&&a.branch_id!==o?.branch_id);
-  const agents=[...branchAgents,...otherAgents];
-  const o=CACHE.orders.find(x=>x.id===orderId);
   document.getElementById('agentSelectDlg')?.remove();
   const div=document.createElement('div');
   div.id='agentSelectDlg'; div.className='ov show';
@@ -1348,7 +1346,7 @@ async function viewOrder(id){
   const agHtml=o.agent_name?`<div class="odr"><span class="odl">المندوب</span><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-weight:600">${o.agent_name}</span>${o.agent_phone?`<a href="tel:${o.agent_phone}" style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldborder);padding:3px 9px;border-radius:7px;font-size:10px;text-decoration:none;font-weight:700">📞</a><a href="https://wa.me/${(o.agent_phone||'').replace(/\D/g,'')}" target="_blank" style="background:rgba(34,197,94,0.1);color:var(--ok);border:1px solid rgba(34,197,94,0.2);padding:3px 9px;border-radius:7px;font-size:10px;text-decoration:none;font-weight:700">💬</a><span onclick="navigator.clipboard.writeText('${o.agent_phone}');toast('✅ تم النسخ')" style="background:var(--bg3);color:var(--txt2);border:1px solid var(--border);padding:3px 9px;border-radius:7px;font-size:10px;cursor:pointer;font-weight:700">📋</span>`:''}</div></div>`:`<div class="odr"><span class="odl">المندوب</span><span class="odv" style="color:var(--txt3)">لم يُعين بعد</span></div>`;
   document.getElementById('od-body').innerHTML=`<div style="background:var(--goldbg);border:1px solid var(--goldborder);border-radius:11px;padding:14px;margin-bottom:14px;text-align:center"><div style="font-family:'Tajawal',sans-serif;font-weight:800;font-size:28px;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">#${String(o.order_number||0).padStart(6,'0')}</div><div style="margin-top:6px"><span class="badge ${st.cls}">${st.icon} ${st.ar}</span></div></div><div class="odr"><span class="odl">التاجر</span><span class="odv">${o.merchant_name||'—'}</span></div><div class="odr"><span class="odl">المستلم</span><span class="odv">${o.recipient||'—'}</span></div><div class="odr"><span class="odl">الهاتف</span><span class="odv">${o.phone||'—'}</span></div><div class="odr"><span class="odl">المدينة/المنطقة</span><span class="odv">${o.city||''} ${o.area?'/ '+o.area:''}</span></div><div class="odr"><span class="odl">العنوان</span><span class="odv">${o.address||'—'}</span></div>${agHtml}${o.content?`<div class="odr"><span class="odl">المحتوى</span><span class="odv">${o.content}</span></div>`:''}<div class="odr"><span class="odl">سعر المنتج</span><span class="odv">${o.amount||0} د.ل</span></div><div class="odr"><span class="odl">رسوم التوصيل</span><span class="odv">${o.fee||0} د.ل — على حساب ${o.fee_on==='merchant'?'التاجر':'المستلم'}</span></div><div class="odr"><span class="odl">الإجمالي</span><span class="odv" style="color:var(--gold);font-weight:700">${(+o.amount||0)+(+o.fee||0)} د.ل</span></div>${o.options?`<div class="odr"><span class="odl">خيارات</span><span class="odv">${o.options}</span></div>`:''}<div class="odr" style="border:none"><span class="odl">التاريخ</span><span class="odv">${new Date(o.created_at).toLocaleDateString('ar-LY')}</span></div>`;
   const canChange=!['delivered','return_received'].includes(o.status);
-  document.getElementById('od-acts').innerHTML=`${canChange?`<button class="bp" onclick="showStatusMenu('${id}',{currentTarget:this,stopPropagation:()=>{}});closeModal('orderDetail')">🔄 تغيير الحالة</button>`:''}<button class="bs" onclick="closeModal('orderDetail')">إغلاق</button>`;
+  document.getElementById('od-acts').innerHTML=(canChange?'<button class="bp" onclick="showStatusMenu(\''+id+'\',event);closeModal(\'orderDetail\')">🔄 تغيير الحالة</button>':'')+' <button class="bs" onclick="closeModal(\'orderDetail\')">إغلاق</button>';
   openModal('orderDetail');
 }
 
