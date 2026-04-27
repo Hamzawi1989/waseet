@@ -714,11 +714,7 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
       <label class="fl">سعر المنتج (د.ل)</label>
       <input class="fi2" id="oProductPrice" type="number" value="0" min="0" oninput="calcTotal()" placeholder="0">
     </div>
-    <div>
-      <label class="fl">رسوم التوصيل (د.ل)</label>
-      <input class="fi2" id="oFee" type="number" value="25" min="0" oninput="calcTotal()" placeholder="25">
-      <div style="font-size:10px;color:var(--txt3);margin-top:3px">يمكن تعديله يدوياً</div>
-    </div>
+    <input type="hidden" id="oFee" value="0">
   </div>
   <!-- الإجمالي -->
   <div style="background:var(--bg2);border:1px solid var(--goldborder);border-radius:9px;padding:10px;margin-bottom:10px">
@@ -1725,38 +1721,55 @@ function onMerchantChange(){
 }
 
 function onCityChange(){
-  const city=document.getElementById('oCity')?.value||'';
-  const branchId=document.getElementById('oBranch')?.value||'';
-  let areas=[];
+  const city = document.getElementById('oCity')?.value||'';
+  // Use currentUser branch if branch manager, else use selected branch
+  const branchId = currentUser?.role==='branch' 
+    ? currentUser.branchId 
+    : (document.getElementById('oBranch')?.value||'');
+  
+  let areas = [];
   if(branchId){
-    areas=CACHE.pricing.filter(p=>p.city===city&&p.branch_id===branchId);
-    if(!areas.length) areas=CACHE.pricing.filter(p=>p.city===city&&(!p.branch_id||p.branch_id===''));
+    // Branch-specific areas first
+    areas = CACHE.pricing.filter(p=>p.city===city && p.branch_id===branchId);
+    // If none, fall back to global areas
+    if(!areas.length) areas = CACHE.pricing.filter(p=>p.city===city && (!p.branch_id||p.branch_id===''||p.branch_id===null));
   } else {
-    areas=CACHE.pricing.filter(p=>p.city===city&&(!p.branch_id||p.branch_id===''));
+    areas = CACHE.pricing.filter(p=>p.city===city && (!p.branch_id||p.branch_id===''||p.branch_id===null));
   }
-  const areaEl=document.getElementById('oArea');
+  
+  const areaEl = document.getElementById('oArea');
   if(!areaEl) return;
-  areaEl.innerHTML=areas.length
-    ?'<option value="">اختر المنطقة...</option>'+areas.map(p=>`<option value="${p.id}" data-price="${p.price}">${p.area} — ${p.price} د.ل</option>`).join('')
-    :'<option value="">لا توجد مناطق لهذه المدينة</option>';
+  
+  if(!areas.length){
+    areaEl.innerHTML='<option value="">لا توجد مناطق مسجلة لهذه المدينة</option>';
+  } else {
+    areaEl.innerHTML='<option value="">اختر المنطقة...</option>'
+      +areas.map(p=>`<option value="${p.id}" data-price="${p.price}">${p.area} — ${p.price} د.ل</option>`).join('');
+  }
+  
+  // Reset fee
+  const feeEl = document.getElementById('oFee');
+  if(feeEl) feeEl.value='0';
   calcTotal();
 }
 
 function onAreaChange(){
-  const areaEl=document.getElementById('oArea');
+  const areaEl = document.getElementById('oArea');
   if(!areaEl) return;
-  const price=areaEl.options[areaEl.selectedIndex]?.dataset?.price;
-  if(price){const el=document.getElementById('oFee');if(el)el.value=price;}
+  const opt = areaEl.options[areaEl.selectedIndex];
+  const price = opt?.dataset?.price || '0';
+  const feeEl = document.getElementById('oFee');
+  if(feeEl) feeEl.value = price;
   calcTotal();
 }
 
 function calcTotal(){
-  const prod=+(document.getElementById('oProductPrice')?.value||0);
-  const fee=+(document.getElementById('oFee')?.value||0);
-  const tot=prod+fee;
-  const tp=document.getElementById('totProduct');if(tp)tp.textContent=prod+' د.ل';
-  const tf=document.getElementById('totFee');if(tf)tf.textContent=fee+' د.ل';
-  const tt=document.getElementById('oTotal');if(tt)tt.textContent=tot+' د.ل';
+  const prod = +(document.getElementById('oProductPrice')?.value||0);
+  const fee  = +(document.getElementById('oFee')?.value||0);
+  const tot  = prod + fee;
+  const tp=document.getElementById('totProduct'); if(tp) tp.textContent=prod.toLocaleString()+' د.ل';
+  const tf=document.getElementById('totFee');     if(tf) tf.textContent=fee.toLocaleString()+' د.ل';
+  const tt=document.getElementById('oTotal');     if(tt) tt.textContent=tot.toLocaleString()+' د.ل';
 }
 
 function toggleOpt(label){ label.classList.toggle('checked'); }
@@ -2572,9 +2585,13 @@ function openModal(id){
       ? CACHE.merchants.filter(m=>m.status==='active'&&m.branch_id===currentUser.branchId)
       : CACHE.merchants.filter(m=>m.status==='active');
     if(ms) ms.innerHTML='<option value="">ابحث أو اختر التاجر...</option>'+availMerchants.map(m=>`<option value="${m.id}">${m.name} — ${m.owner||''}</option>`).join('');
+    // Populate cities
     const cities=window._cities||[];
     const cityEl=document.getElementById('oCity');
-    if(cityEl) cityEl.innerHTML='<option value="">اختر المدينة...</option>'+cities.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+    if(cityEl) cityEl.innerHTML='<option value="">اختر المدينة...</option>'+cities.map(ct=>`<option value="${ct.name}">${ct.name}</option>`).join('');
+    // Reset area
+    const aEl=document.getElementById('oArea');
+    if(aEl) aEl.innerHTML='<option value="">اختر المدينة أولاً...</option>';
     const areaEl=document.getElementById('oArea');
     if(areaEl) areaEl.innerHTML='<option value="">اختر المنطقة...</option>';
     const num=document.getElementById('nextOrderNum');
