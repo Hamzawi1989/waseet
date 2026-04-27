@@ -775,14 +775,31 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
     </div>
     <div class="fg2">
       <div class="fg"><label class="fl">رقم الهوية</label><input class="fi2" id="agId" placeholder="الرقم الوطني"></div>
-      <div class="fg"><label class="fl">المنطقة</label><select class="fi2" id="agArea"><option>طرابلس</option><option>جنزور</option><option>أبوسليم</option><option>تاجوراء</option></select></div>
+      <div class="fg"><label class="fl">المركبة</label><select class="fi2" id="agV"><option>دراجة نارية</option><option>سيارة</option><option>دراجة هوائية</option></select></div>
     </div>
     <div class="fg2">
-      <div class="fg"><label class="fl">المركبة</label><select class="fi2" id="agV"><option>دراجة نارية</option><option>سيارة</option><option>دراجة هوائية</option></select></div>
-      <div class="fg"><label class="fl">الراتب الأساسي (د.ل)</label><input class="fi2" id="agSal" type="number" value="800"></div>
+      <div class="fg">
+        <label class="fl">مدينة الفرع *</label>
+        <select class="fi2" id="agBranchCity" onchange="onAgentBranchCityChange()">
+          <option value="">اختر مدينة الفرع...</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">الفرع *</label>
+        <select class="fi2" id="agBranch">
+          <option value="">اختر الفرع...</option>
+        </select>
+      </div>
     </div>
-    <div class="mac"><button class="bp" onclick="submitAgent()">✅ إضافة</button><button class="bs" onclick="closeModal('newAgent')">إلغاء</button></div>
+    <div class="fg"><label class="fl">الراتب الأساسي (د.ل)</label><input class="fi2" id="agSal" type="number" value="800"></div>
+    <div class="mac">
+      <button class="bp" onclick="submitAgent()">✅ إضافة المندوب</button>
+      <button class="bs" onclick="closeModal('newAgent')">إلغاء</button>
+    </div>
   </div>
+</div>
+
+<div class="ov" id="ov-settle"</div>
 </div>
 
 <div class="ov" id="ov-settle">
@@ -954,6 +971,7 @@ async function reConnect(){
 async function bootApp(){
   setLdTxt('جاري تحميل البيانات...');
   await refreshAll();
+  await loadOrderNum();
   document.getElementById('loadingScreen').style.display='none';
   startClock();
 }
@@ -1037,9 +1055,15 @@ async function fetchCities(){
 
 async function loadOrderNum(){
   try {
-    const {data} = await SB.from('order_counter').select('next_num').eq('id',1).single();
-    if(data) DB.nextOrderNum = data.next_num||1;
-  } catch(e){}
+    const {data,error} = await SB.from('order_counter').select('next_num').eq('id',1).single();
+    if(!error && data) {
+      DB.nextOrderNum = data.next_num||1;
+    } else {
+      // Try to create the counter row
+      const {data:d2} = await SB.from('order_counter').insert({id:1,next_num:1}).select().single();
+      if(d2) DB.nextOrderNum = 1;
+    }
+  } catch(e){ DB.nextOrderNum = DB.nextOrderNum||1; }
 }
 
 // ════════════════════════════════════════
@@ -1434,8 +1458,12 @@ async function submitOrder(){
   if(document.getElementById('optNoOpen')?.checked) opts.push('لا يُسمح بفتحه');
   if(document.getElementById('optOpen')?.checked) opts.push('يُسمح بفتحه');
   if(document.getElementById('optMeasure')?.checked) opts.push('مسموح القياس');
-  const orderNum=DB.nextOrderNum||1;
-  try{ await SB.from('order_counter').update({next_num:orderNum+1}).eq('id',1); }catch(e){}
+  let orderNum=DB.nextOrderNum||1;
+  try{
+    const {data:cnt}=await SB.from('order_counter').select('next_num').eq('id',1).single();
+    if(cnt&&cnt.next_num){orderNum=cnt.next_num;}
+    await SB.from('order_counter').update({next_num:orderNum+1}).eq('id',1);
+  }catch(e){}
   DB.nextOrderNum=orderNum+1;
   const newO={
     order_number:orderNum, merchant_id:merchant?.id||null, merchant_name:merchant?.name||'',
@@ -1542,12 +1570,25 @@ function renderAgentsPage(){
   el.innerHTML=as.map(a=>`<div class="tbl-row" style="grid-template-columns:1fr 100px 80px 80px 80px 100px"><div style="display:flex;align-items:center;gap:9px"><div class="agav" style="background:${a.color||'#d4a017'}22;color:${a.color||'var(--gold)'};">${a.name.charAt(0)}<div class="odot ${agDot(a.status)}"></div></div><div><div style="font-weight:600">${a.name}</div><div class="sub">${a.phone||'—'}</div></div></div><span>${a.area||'—'}</span><span style="color:var(--gold);font-weight:700">${a.orders_count||0}</span><span class="badge ${agBadge(a.status)}">${agSt(a.status)}</span><span style="color:var(--gold)">⭐ ${a.rating||5}</span><div class="acts"><div class="act" onclick="viewAgent('${a.id}')">👁️</div><div class="act" onclick="toggleAgentStatus('${a.id}')">🔄</div><div class="act r" onclick="deleteAgent('${a.id}')">🗑️</div></div></div>`).join('');
 }
 
+
+// Agent branch city change
+function onAgentBranchCityChange(){
+  const city = document.getElementById('agBranchCity').value;
+  const branches = (window._branches||[]).filter(b=>b.city===city && b.status==='active');
+  const sel = document.getElementById('agBranch');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">اختر الفرع...</option>' +
+    branches.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+}
 async function submitAgent(){
   const name=document.getElementById('agName')?.value.trim();
   const phone=document.getElementById('agPhone')?.value.trim();
-  if(!name||!phone){toast('⚠️ يرجى ملء الحقول المطلوبة','warn');return;}
+  const branchId=document.getElementById('agBranch')?.value||'';
+  const branchCity=document.getElementById('agBranchCity')?.value||'';
+  if(!name||!phone){toast('⚠️ يرجى ملء الاسم والهاتف','warn');return;}
+  if(!branchId){toast('⚠️ يرجى اختيار الفرع','warn');return;}
   const colors=['#d4a017','#7c3aed','#ff6b35','#f59e0b','#10b981','#3b82f6'];
-  const {data,error}=await SB.from('agents').insert({name,phone,national_id:document.getElementById('agId')?.value||'',area:document.getElementById('agCity')?.value||'',vehicle:document.getElementById('agV')?.value||'دراجة نارية',salary:+(document.getElementById('agSal')?.value||800),orders_count:0,rating:5.0,status:'offline',color:colors[CACHE.agents.length%colors.length]}).select().single();
+  const {data,error}=await SB.from('agents').insert({name,phone,national_id:document.getElementById('agId')?.value||'',area:branchCity,city:branchCity,branch_id:branchId,vehicle:document.getElementById('agV')?.value||'دراجة نارية',salary:+(document.getElementById('agSal')?.value||800),orders_count:0,rating:5.0,status:'offline',color:colors[CACHE.agents.length%colors.length]}).select().single();
   if(error){toast('❌ خطأ: '+error.message,'err');return;}
   CACHE.agents.push(data);
   renderAgentsPage();renderDashAgents();closeModal('newAgent');
@@ -1698,15 +1739,29 @@ function getCurrentPricing(){
 
 async function copyPricingFromGlobal(){
   if(!_currentPricingBranch){toast('⚠️ اختر فرعاً أولاً','warn');return;}
-  const global=CACHE.pricing.filter(p=>!p.branch_id||p.branch_id==='');
-  if(!global.length){toast('⚠️ لا توجد أسعار عامة','warn');return;}
-  cnf('📋','نسخ الأسعار العامة',`نسخ ${global.length} منطقة لهذا الفرع؟`,async()=>{
-    const ins=global.map(p=>({area:p.area,price:p.price,city:p.city||'',branch_id:_currentPricingBranch}));
-    const {data,error}=await SB.from('pricing').insert(ins).select();
-    if(error){toast('❌ '+error.message,'err');return;}
-    CACHE.pricing=[...CACHE.pricing,...data];
-    renderPricingPage();toast(`✅ تم نسخ ${data.length} منطقة!`,'ok');
-  });
+  // Check if branch already has pricing
+  const existing=CACHE.pricing.filter(p=>p.branch_id===_currentPricingBranch);
+  if(existing.length>0){
+    cnf('📋','هل تريد الاستبدال؟',`الفرع لديه ${existing.length} منطقة. هل تريد حذفها ونسخ الأسعار العامة؟`,async()=>{
+      // Delete existing branch pricing
+      await SB.from('pricing').delete().eq('branch_id',_currentPricingBranch);
+      CACHE.pricing=CACHE.pricing.filter(p=>p.branch_id!==_currentPricingBranch);
+      await doCopyPricing();
+    });
+    return;
+  }
+  await doCopyPricing();
+}
+
+async function doCopyPricing(){
+  const globalPricing=CACHE.pricing.filter(p=>!p.branch_id||p.branch_id===''||p.branch_id===null);
+  if(!globalPricing.length){toast('⚠️ لا توجد أسعار عامة للنسخ — أضف مناطق عامة أولاً','warn');return;}
+  const ins=globalPricing.map(p=>({area:p.area,price:p.price,city:p.city||'',branch_id:_currentPricingBranch}));
+  const {data,error}=await SB.from('pricing').insert(ins).select();
+  if(error){toast('❌ '+error.message,'err');return;}
+  CACHE.pricing=[...CACHE.pricing,...(data||[])];
+  renderPricingPage();
+  toast(`✅ تم نسخ ${(data||[]).length} منطقة من جميع المدن!`,'ok');
 }
 
 function renderPricingPage(){
@@ -1951,7 +2006,15 @@ function openModal(id){
     const fr=document.getElementById('feeRecipient');if(fr)fr.checked=true;
     calcTotal();
   }
-  if(id==='newMerchant'||id==='newAgent'){ refreshCityDropdowns(); populateBranchSelects(); }
+  if(id==='newMerchant'){ refreshCityDropdowns(); populateBranchSelects(); }
+  if(id==='newAgent'){
+    // Populate branch cities (cities that have branches)
+    const branchCities=[...new Set((window._branches||[]).filter(b=>b.status==='active').map(b=>b.city).filter(Boolean))];
+    const bcSel=document.getElementById('agBranchCity');
+    if(bcSel) bcSel.innerHTML='<option value="">اختر مدينة الفرع...</option>'+branchCities.map(ct=>`<option value="${ct}">${ct}</option>`).join('');
+    const bSel=document.getElementById('agBranch');
+    if(bSel) bSel.innerHTML='<option value="">اختر الفرع...</option>';
+  }
   if(id==='newBranch'){ refreshCityDropdowns(); }
   if(id==='newArea'){
     const ac=document.getElementById('areaCity');
