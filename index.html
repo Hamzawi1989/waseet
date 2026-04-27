@@ -1820,8 +1820,10 @@ async function submitOrder(){
   }
   if(!merch){toast('⚠️ اختر التاجر أولاً','warn');return;}
   if(!rec||!ph){toast('⚠️ أدخل اسم وهاتف المستلم','warn');return;}
-  if(!city||!areaEl?.value){toast('⚠️ اختر المدينة والمنطقة','warn');return;}
-  if(!addr){toast('⚠️ أدخل العنوان التفصيلي','warn');return;}
+  // Warn if no area but don't block
+  if(!city){toast('⚠️ اختر المدينة','warn');return;}
+  // Area is optional if no pricing set up yet
+  // address is optional
   const areaText=areaEl.options[areaEl.selectedIndex]?.text?.split('—')[0]?.trim()||'';
   const merchant=CACHE.merchants.find(m=>m.id===merch);
   const feeOn=document.querySelector('input[name="feeOn"]:checked')?.value||'recipient';
@@ -1831,21 +1833,37 @@ async function submitOrder(){
   if(document.getElementById('optNoOpen')?.checked) opts.push('لا يُسمح بفتحه');
   if(document.getElementById('optOpen')?.checked) opts.push('يُسمح بفتحه');
   if(document.getElementById('optMeasure')?.checked) opts.push('مسموح القياس');
-  // Get next sequential order number
-  await loadOrderNum();
-  let orderNum = DB.nextOrderNum||1;
+  // Get next order number from counter
+  let orderNum = 1;
   try{
+    const {data:cnt} = await SB.from('order_counter').select('next_num').eq('id',1).single();
+    if(cnt && cnt.next_num) orderNum = cnt.next_num;
+    else {
+      const {data:mx} = await SB.from('orders').select('order_number').order('order_number',{ascending:false}).limit(1);
+      orderNum = mx && mx.length>0 ? (+mx[0].order_number||0)+1 : 1;
+    }
     await SB.from('order_counter').upsert({id:1, next_num:orderNum+1});
-  }catch(e){}
+  }catch(e){
+    orderNum = DB.nextOrderNum||1;
+    DB.nextOrderNum = orderNum+1;
+  }
   DB.nextOrderNum = orderNum+1;
+  // Get branch_id
+  const branchId = currentUser?.role==='branch' 
+    ? currentUser.branchId 
+    : (document.getElementById('oBranch')?.value||null);
+  
   const newO={
-    order_number:orderNum, merchant_id:merchant?.id||null, merchant_name:merchant?.name||'',
+    order_number:orderNum, 
+    merchant_id:merchant?.id||null, 
+    merchant_name:merchant?.name||'',
+    branch_id:branchId,
     recipient:rec, phone:ph, phone2:document.getElementById('oPh2')?.value||'',
     address:addr, area:areaText, city,
     agent_id:null, agent_name:'', agent_phone:'',
     status:'waiting_approval', status_text:'انتظار موافقة',
     amount:+(document.getElementById('oProductPrice')?.value||0),
-    fee:+(document.getElementById('oFee')?.value||25),
+    fee:+(document.getElementById('oFee')?.value||areaEl?.options[areaEl?.selectedIndex]?.dataset?.price||0),
     fee_on:feeOn, content:document.getElementById('oContent')?.value||'',
     qty:+(document.getElementById('oQty')?.value||1),
     options:opts.join('، '), notes:document.getElementById('oNotes')?.value||'',
