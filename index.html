@@ -287,6 +287,42 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
   <div class="loader-txt" id="loadTxt">جاري الاتصال بقاعدة البيانات...</div>
 </div>
 
+<!-- LOGIN SCREEN -->
+
+<div id="loginScreen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9997;align-items:center;justify-content:center;flex-direction:column">
+  <div style="background:var(--bg2);border:1px solid var(--goldborder);border-radius:22px;padding:36px 32px;width:420px;max-width:93vw;box-shadow:0 24px 80px rgba(212,160,23,0.12)">
+    <!-- Logo -->
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:48px;margin-bottom:10px">🚚</div>
+      <div style="font-family:'Tajawal',sans-serif;font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--gold3),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px">WASEET</div>
+      <div style="font-size:12px;color:var(--txt3);margin-top:4px">نظام إدارة التوصيل</div>
+    </div>
+    <!-- Form -->
+    <div id="loginError" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--err);text-align:center"></div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:10px;color:var(--txt3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">البريد الإلكتروني</label>
+      <input id="loginEmail" type="email" placeholder="admin@waseet.ly" 
+        style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--txt);padding:12px 14px;border-radius:11px;font-family:'Cairo',sans-serif;font-size:14px;outline:none;transition:border-color .2s"
+        onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"
+        onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="font-size:10px;color:var(--txt3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">كلمة المرور</label>
+      <input id="loginPass" type="password" placeholder="••••••••"
+        style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--txt);padding:12px 14px;border-radius:11px;font-family:'Cairo',sans-serif;font-size:14px;outline:none;transition:border-color .2s"
+        onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button onclick="doLogin()" id="loginBtn"
+      style="width:100%;background:linear-gradient(135deg,var(--gold3),var(--gold));color:var(--bg);border:none;padding:14px;border-radius:12px;font-family:'Cairo',sans-serif;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(212,160,23,0.25);transition:all .2s">
+      🔐 تسجيل الدخول
+    </button>
+    <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--txt3)">
+      نظام WASEET لإدارة التوصيل — محمي بكلمة مرور
+    </div>
+  </div>
+</div>
+
 <!-- CONFIG -->
 
 <div id="configScreen" style="display:none;position:fixed;inset:0;background:var(--pri);z-index:9998;align-items:center;justify-content:center;">
@@ -918,6 +954,171 @@ let _currentPricingBranch = '';
 let _pricingFilter = '';
 let _scanLog = [];
 
+
+// ════════════════════════════════════════
+//  AUTH SYSTEM
+// ════════════════════════════════════════
+// currentUser: { role: 'admin'|'branch', branchId, branchName, email, name }
+let currentUser = null;
+
+const ADMIN_EMAIL = 'admin@waseet.ly';
+const ADMIN_PASS  = 'waseet2024admin';
+
+async function doLogin(){
+  const email = (document.getElementById('loginEmail')?.value||'').trim().toLowerCase();
+  const pass  = (document.getElementById('loginPass')?.value||'').trim();
+  
+  if(!email||!pass){
+    showLoginError('أدخل البريد الإلكتروني وكلمة المرور');
+    return;
+  }
+  
+  const btn = document.getElementById('loginBtn');
+  if(btn){ btn.textContent='جاري التحقق...'; btn.disabled=true; }
+  
+  try {
+    // 1. Check admin credentials
+    if(email === ADMIN_EMAIL && pass === ADMIN_PASS){
+      currentUser = { role:'admin', name:'المدير العام', email:ADMIN_EMAIL, branchId:null, branchName:'الإدارة العامة' };
+      saveSession(currentUser);
+      await enterApp();
+      return;
+    }
+    
+    // 2. Check branch credentials from DB
+    const {data:branches, error} = await SB.from('branches')
+      .select('id,name,email,password_hash,city,status')
+      .eq('email', email)
+      .eq('status','active');
+    
+    if(error) throw error;
+    
+    if(branches && branches.length > 0){
+      const branch = branches.find(b => b.password_hash === pass);
+      if(branch){
+        currentUser = { 
+          role:'branch', 
+          branchId: branch.id, 
+          branchName: branch.name,
+          email: branch.email,
+          name: 'مدير '+branch.name,
+          city: branch.city
+        };
+        saveSession(currentUser);
+        await enterApp();
+        return;
+      }
+    }
+    
+    showLoginError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+  } catch(e){
+    showLoginError('خطأ في الاتصال: '+e.message);
+  } finally {
+    if(btn){ btn.textContent='🔐 تسجيل الدخول'; btn.disabled=false; }
+  }
+}
+
+function showLoginError(msg){
+  const el = document.getElementById('loginError');
+  if(el){ el.textContent=msg; el.style.display='block'; }
+}
+
+function saveSession(user){
+  localStorage.setItem('wb_user', JSON.stringify(user));
+}
+
+function loadSession(){
+  try { return JSON.parse(localStorage.getItem('wb_user')||'null'); }
+  catch(e){ return null; }
+}
+
+function clearSession(){
+  localStorage.removeItem('wb_user');
+  currentUser = null;
+}
+
+async function enterApp(){
+  // Hide login/loading screens
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('loadingScreen').style.display='flex';
+  
+  // Update UI based on role
+  applyUserRole();
+  
+  // Load data
+  await bootApp();
+}
+
+function applyUserRole(){
+  if(!currentUser) return;
+  
+  // Update sidebar footer
+  const sav = document.querySelector('.sav');
+  if(sav) sav.textContent = currentUser.name.charAt(0);
+  const siName = document.querySelector('.si h4');
+  if(siName) siName.textContent = currentUser.name;
+  const siRole = document.querySelector('.si span');
+  if(siRole) siRole.textContent = currentUser.role==='admin'?'مدير عام':'مدير فرع';
+  
+  // Hide admin-only menu items for branch managers
+  if(currentUser.role === 'branch'){
+    // Hide branches page from sidebar
+    const branchNav = document.querySelector('[data-page="branches"]');
+    if(branchNav) branchNav.style.display='none';
+    // Hide reports nav
+    const reportsNav = document.querySelector('[data-page="reports"]');
+    if(reportsNav) reportsNav.style.display='none';
+  }
+  
+  // Add logout button to settings
+  const logoutContainer = document.getElementById('logoutBtn');
+  if(!logoutContainer){
+    const div = document.createElement('div');
+    div.id = 'logoutBtn';
+    div.style.cssText='position:fixed;top:12px;left:12px;z-index:100';
+    div.innerHTML='<button onclick="doLogout()" style="background:rgba(239,68,68,0.1);color:var(--err);border:1px solid rgba(239,68,68,0.2);padding:6px 12px;border-radius:9px;font-family:Cairo,sans-serif;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">🚪 خروج</button>';
+    document.body.appendChild(div);
+  }
+  
+  // Show branch badge in topbar
+  if(currentUser.role === 'branch'){
+    const tit = document.getElementById('pgTitle');
+    if(tit) tit.style.cssText='font-size:14px;font-weight:700';
+    // Add branch badge
+    let badge = document.getElementById('branchBadge');
+    if(!badge){
+      badge = document.createElement('div');
+      badge.id = 'branchBadge';
+      badge.style.cssText='background:var(--goldbg);border:1px solid var(--goldborder);color:var(--gold);padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;display:flex;align-items:center;gap:4px';
+      badge.innerHTML = '🏢 '+currentUser.branchName;
+      const tl = document.querySelector('.tl');
+      if(tl) tl.appendChild(badge);
+    }
+  }
+}
+
+function doLogout(){
+  clearSession();
+  location.reload();
+}
+
+// ─── Filter data by branch ───
+function filterByBranch(items, branchField='branch_id'){
+  if(!currentUser || currentUser.role==='admin') return items;
+  return items.filter(x => x[branchField] === currentUser.branchId);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 // ════════════════════════════════════════
 //  SUPABASE
 // ════════════════════════════════════════
@@ -1279,10 +1480,14 @@ async function updateOrderStatus(id,status,statusText){
 function renderDashboard(){
   const {orders,merchants,agents}=CACHE;
   const branches=window._branches||[];
-  const delivered=orders.filter(o=>o.status==='delivered').length;
-  const revenue=orders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(+o.fee||0),0);
-  const activeAgents=agents.filter(a=>a.status==='online'||a.status==='busy').length;
-  const pending=orders.filter(o=>o.status==='waiting_approval'||o.status==='pending').length;
+  // Filter by branch for branch managers
+  const branchOrders = currentUser?.role==='branch' ? orders.filter(o=>o.branch_id===currentUser.branchId) : orders;
+  const branchMerchants = currentUser?.role==='branch' ? CACHE.merchants.filter(m=>m.branch_id===currentUser.branchId) : CACHE.merchants;
+  const branchAgents2 = currentUser?.role==='branch' ? agents.filter(a=>a.branch_id===currentUser.branchId) : agents;
+  const delivered=branchOrders.filter(o=>o.status==='delivered').length;
+  const revenue=branchOrders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(+o.fee||0),0);
+  const activeAgents=branchAgents2.filter(a=>a.status==='online'||a.status==='busy').length;
+  const pending=branchOrders.filter(o=>o.status==='waiting_approval'||o.status==='pending').length;
   const badge=document.getElementById('badgeO');
   if(badge){badge.textContent=pending||'';badge.style.display=pending?'':'none';}
   const mapCount=document.getElementById('mapCount');
@@ -1363,6 +1568,8 @@ function loadOrders(){
   const fb=document.getElementById('fBranch')?.value||'';
   const q=document.getElementById('srch')?.value?.toLowerCase()||'';
   let rows=CACHE.orders.filter(o=>{
+    // Branch user: only see their branch orders
+    if(currentUser?.role==='branch' && o.branch_id!==currentUser.branchId) return false;
     const mapped=o.status==='pending'?'waiting_approval':o.status==='transit'?'in_delivery':o.status;
     if(fs&&mapped!==fs&&o.status!==fs) return false;
     if(fb&&o.branch_id!==fb) return false;
@@ -1463,6 +1670,16 @@ async function submitOrder(){
   const addr=document.getElementById('oAddr')?.value.trim();
   const city=document.getElementById('oCity')?.value||'';
   const areaEl=document.getElementById('oArea');
+  // Auto-set branch for branch managers
+  if(currentUser?.role==='branch'){
+    const brEl=document.getElementById('oBranch');
+    if(brEl && !brEl.value) brEl.value=currentUser.branchId;
+  }
+  // Branch manager: auto-set branch
+  if(currentUser?.role==='branch'){
+    const bel=document.getElementById('oBranch');
+    if(bel&&!bel.value) bel.value=currentUser.branchId;
+  }
   if(!merch){toast('⚠️ اختر التاجر أولاً','warn');return;}
   if(!rec||!ph){toast('⚠️ أدخل اسم وهاتف المستلم','warn');return;}
   if(!city||!areaEl?.value){toast('⚠️ اختر المدينة والمنطقة','warn');return;}
@@ -1517,7 +1734,7 @@ function showOrderSuccess(num,recipient){
 //  MERCHANTS
 // ════════════════════════════════════════
 function renderMerchantsPage(){
-  const ms=CACHE.merchants;
+  const ms=currentUser?.role==='branch' ? CACHE.merchants.filter(m=>m.branch_id===currentUser.branchId) : CACHE.merchants;
   const total=ms.reduce((s,m)=>s+(+m.balance||0),0);
   const mStats=document.getElementById('mStats');
   if(mStats) mStats.innerHTML=`<div class="sc"><div class="sct"><div class="sci">🏪</div></div><div class="sv">${ms.length}</div><div class="sl">إجمالي التجار</div></div><div class="sc"><div class="sct"><div class="sci">✅</div></div><div class="sv">${ms.filter(m=>m.status==='active').length}</div><div class="sl">نشطون</div></div><div class="sc"><div class="sct"><div class="sci">💰</div></div><div class="sv">${total.toLocaleString()}</div><div class="sl">مستحقات (د.ل)</div></div>`;
@@ -1532,7 +1749,8 @@ async function submitMerchant(){
   const owner=document.getElementById('mOwner')?.value.trim();
   const phone=document.getElementById('mPhone')?.value.trim();
   if(!name||!owner||!phone){toast('⚠️ يرجى ملء الحقول المطلوبة','warn');return;}
-  const {data,error}=await SB.from('merchants').insert({name,owner,phone,area:document.getElementById('mCity')?.value||'',address:document.getElementById('mAddr')?.value||'',fee:+(document.getElementById('mFee')?.value||25),pay_method:document.getElementById('mPay')?.value||'نقداً',balance:0,orders_count:0,status:'active'}).select().single();
+  const mBranchId = currentUser?.role==='branch' ? currentUser.branchId : (document.getElementById('mBranch')?.value||null);
+  const {data,error}=await SB.from('merchants').insert({name,owner,phone,area:document.getElementById('mCity')?.value||'',branch_id:mBranchId,address:document.getElementById('mAddr')?.value||'',fee:+(document.getElementById('mFee')?.value||25),pay_method:document.getElementById('mPay')?.value||'نقداً',balance:0,orders_count:0,status:'active'}).select().single();
   if(error){toast('❌ خطأ: '+error.message,'err');return;}
   CACHE.merchants.unshift(data);
   renderMerchantsPage(); closeModal('newMerchant');
@@ -1576,7 +1794,7 @@ function agSt(s){return{online:'نشط',busy:'مشغول',offline:'غير متص
 function agBadge(s){return{online:'b-ok',busy:'b-w',offline:'b-e'}[s]||'b-e';}
 
 function renderAgentsPage(){
-  const as=CACHE.agents;
+  const as=currentUser?.role==='branch' ? CACHE.agents.filter(a=>a.branch_id===currentUser.branchId) : CACHE.agents;
   const active=as.filter(a=>a.status==='online').length;
   const busy=as.filter(a=>a.status==='busy').length;
   const avgR=as.length?(as.reduce((s,a)=>s+(+a.rating||0),0)/as.length).toFixed(1):0;
@@ -2004,6 +2222,11 @@ function openModal(id){
   if(id==='newOrder'){
     loadOrderNum();
     populateBranchSelects();
+    // Auto-select branch for branch managers
+    if(currentUser?.role==='branch'){
+      const bel=document.getElementById('oBranch');
+      if(bel) bel.value=currentUser.branchId;
+    }
     const ms=document.getElementById('oMerch');
     if(ms) ms.innerHTML='<option value="">ابحث أو اختر التاجر...</option>'+CACHE.merchants.filter(m=>m.status==='active').map(m=>`<option value="${m.id}">${m.name} — ${m.owner||''}</option>`).join('');
     const cities=window._cities||[];
@@ -2081,6 +2304,18 @@ function timeAgo(ts){
 }
 
 function startClock(){
+  // Show branch info if branch user
+  if(currentUser?.role==='branch'){
+    const badge = document.getElementById('branchBadge');
+    if(!badge){
+      const b=document.createElement('span');
+      b.id='branchBadge';
+      b.style.cssText='background:var(--goldbg);border:1px solid var(--goldborder);color:var(--gold);padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;margin-right:8px';
+      b.textContent='🏢 '+currentUser.branchName;
+      const tl=document.querySelector('.tl');
+      if(tl) tl.appendChild(b);
+    }
+  }
   const upd=()=>{
     const d=new Date();
     const el=document.getElementById('pgDate');
@@ -2103,7 +2338,20 @@ window.addEventListener('DOMContentLoaded',async()=>{
   if(url&&key){
     initSB(url,key);
     const ok=await testConn();
-    if(ok){await bootApp();return;}
+    if(ok){
+      // Check saved session
+      const savedUser = loadSession();
+      if(savedUser){
+        currentUser = savedUser;
+        await enterApp();
+        return;
+      }
+      // Show login screen
+      document.getElementById('loadingScreen').style.display='none';
+      const ls=document.getElementById('loginScreen');
+      if(ls){ls.style.display='flex';}
+      return;
+    }
   }
   document.getElementById('loadingScreen').style.display='none';
   const cs=document.getElementById('configScreen');
