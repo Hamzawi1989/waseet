@@ -613,8 +613,9 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
       </div>
       <div class="pn"><div class="ph"><h3>🔗 إعادة ربط قاعدة البيانات</h3></div>
         <div style="padding:18px">
-          <div class="fg"><label class="fl">Supabase URL</label><input class="fi2" id="cfgUrl2" placeholder="https://xxx.supabase.co"></div>
-          <div class="fg"><label class="fl">Anon Key</label><input class="fi2" id="cfgKey2" placeholder="eyJ..."></div>
+          <div class="fg"><label class="fl">Supabase URL</label><input class="fi2" id="cfgUrl2" placeholder="https://xxx.supabase.co" style="direction:ltr;text-align:left;font-size:11px"></div>
+          <div class="fg"><label class="fl">Anon Key</label><input class="fi2" id="cfgKey2" placeholder="eyJ..." style="direction:ltr;text-align:left;font-size:10px"></div>
+          <div id="connStatus" style="font-size:11px;padding:8px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);margin-bottom:8px;color:var(--txt3)">🔌 اضغط "إعادة الاتصال" للتحقق</div>
           <button class="bp" onclick="reConnect()">🔗 إعادة الاتصال</button>
         </div>
       </div>
@@ -1183,14 +1184,33 @@ async function saveConfig(){
 }
 
 async function reConnect(){
-  const url=document.getElementById('cfgUrl2')?.value.trim();
-  const key=document.getElementById('cfgKey2')?.value.trim();
-  if(!url||!key){ toast('⚠️ أدخل البيانات','warn'); return; }
-  localStorage.setItem('wb_url',url); localStorage.setItem('wb_key',key);
+  const url=(document.getElementById('cfgUrl2')?.value||'').trim();
+  const key=(document.getElementById('cfgKey2')?.value||'').trim();
+  if(!url||!key){ toast('⚠️ أدخل URL و Key','warn'); return; }
+  
+  const btn=document.querySelector('[onclick="reConnect()"]');
+  if(btn){ btn.textContent='جاري الاتصال...'; btn.disabled=true; }
+  
+  // Save first
+  localStorage.setItem('wb_url',url);
+  localStorage.setItem('wb_key',key);
+  
   initSB(url,key);
   const ok = await testConn();
-  if(ok){ toast('✅ تم الاتصال بنجاح!','ok'); await bootApp(); }
-  else { toast('❌ فشل الاتصال','err'); }
+  
+  if(btn){ btn.textContent='🔗 إعادة الاتصال'; btn.disabled=false; }
+  
+  if(ok){
+    toast('✅ تم الاتصال بنجاح — يتم تحديث البيانات...','ok');
+    await refreshAll();
+    toast('✅ البيانات محدثة!','ok');
+  } else {
+    toast('❌ فشل الاتصال — تحقق من البيانات','err');
+    // Restore previous working values
+    const prev=getSavedConfig();
+    localStorage.setItem('wb_url',prev.url);
+    localStorage.setItem('wb_key',prev.key);
+  }
 }
 
 // ════════════════════════════════════════
@@ -2586,6 +2606,29 @@ function onPageOpen(pid){
   }
   if(pid==='notifications') renderNotifications();
   if(pid==='reports') renderReportsPage();
+  if(pid==='settings'){
+    // Pre-fill saved connection data
+    const su=localStorage.getItem('wb_url')||'';
+    const sk=localStorage.getItem('wb_key')||'';
+    const u=document.getElementById('cfgUrl2');
+    const k=document.getElementById('cfgKey2');
+    if(u) u.value=su;
+    if(k) k.value=sk;
+    // Show connection status
+    const cs=document.getElementById('connStatus');
+    if(cs){
+      if(SB&&su){
+        testConn().then(ok=>{
+          if(cs) cs.innerHTML=ok
+            ?'<span style="color:var(--ok)">✅ متصل بـ Supabase</span>'
+            :'<span style="color:var(--err)">❌ الاتصال منقطع</span>';
+        });
+        cs.innerHTML='🔄 جاري التحقق...';
+      } else {
+        cs.innerHTML='<span style="color:var(--warn)">⚠️ لم يتم الاتصال بعد</span>';
+      }
+    }
+  }
   if(pid==='branches') renderBranchesPage();
   if(pid==='scan') renderScanHistory();
 }
