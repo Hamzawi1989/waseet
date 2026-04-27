@@ -1896,7 +1896,7 @@ function renderBranchesPage(){
     const bO=CACHE.orders.filter(o=>o.branch_id===b.id).length;
     const bM=CACHE.merchants.filter(m=>m.branch_id===b.id).length;
     const bP=CACHE.pricing.filter(p=>p.branch_id===b.id).length;
-    return `<div class="branch-card" onclick="viewBranch('${b.id}')"><div class="bc-hdr"><div class="bc-ic">🏢</div><div style="flex:1"><div class="bc-name">${b.name}</div><div class="bc-city">📍 ${b.city||'—'}</div></div><span class="badge ${b.status==='active'?'b-ok':'b-e'}">${b.status==='active'?'نشط':'متوقف'}</span></div><div style="font-size:11px;color:var(--txt3);margin-bottom:8px">👤 ${b.manager_name||'—'} · ${b.phone||'—'}</div><div class="bc-stats"><div class="bs-item"><div class="bs-val">${bO}</div><div class="bs-lbl">شحنة</div></div><div class="bs-item"><div class="bs-val">${bM}</div><div class="bs-lbl">تاجر</div></div><div class="bs-item"><div class="bs-val">${bP||'—'}</div><div class="bs-lbl">سعر</div></div></div><div class="bc-foot"><button onclick="event.stopPropagation();viewBranch('${b.id}')" style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldborder);padding:4px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:600">👁️ عرض</button><button onclick="event.stopPropagation();goToBranchPricing('${b.id}')" style="background:rgba(59,130,246,0.1);color:var(--info);border:1px solid rgba(59,130,246,0.2);padding:4px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:600">🗺️ أسعاره</button><button onclick="event.stopPropagation();toggleBranchStatus('${b.id}')" style="background:transparent;color:var(--txt2);border:1px solid var(--border);padding:4px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Cairo',sans-serif">🔄</button><button onclick="event.stopPropagation();deleteBranch('${b.id}')" style="background:rgba(239,68,68,0.1);color:var(--err);border:1px solid rgba(239,68,68,0.2);padding:4px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Cairo',sans-serif">🗑️</button></div></div>`;
+    return `<div class="branch-card" onclick="viewBranch('${b.id}')"><div class="bc-hdr"><div class="bc-ic">🏢</div><div style="flex:1"><div class="bc-name">${b.name}</div><div class="bc-city">📍 ${b.city||'—'}</div></div><span class="badge ${b.status==='active'?'b-ok':'b-e'}">${b.status==='active'?'نشط':'متوقف'}</span></div><div style="font-size:11px;color:var(--txt3);margin-bottom:8px">👤 ${b.manager_name||'—'} · ${b.phone||'—'}</div><div class="bc-stats"><div class="bs-item"><div class="bs-val">${bO}</div><div class="bs-lbl">شحنة</div></div><div class="bs-item"><div class="bs-val">${bM}</div><div class="bs-lbl">تاجر</div></div><div class="bs-item"><div class="bs-val">${bP||'—'}</div><div class="bs-lbl">سعر</div></div></div><div class="bc-foot"><button onclick="event.stopPropagation();viewBranch('${b.id}')" style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldborder);padding:4px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:600">👁️ عرض</button><button onclick="event.stopPropagation();goToBranchPricing('${b.id}')" style="background:rgba(59,130,246,0.1);color:var(--info);border:1px solid rgba(59,130,246,0.2);padding:4px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:600">🗺️ أسعاره</button><button onclick="event.stopPropagation();toggleBranchStatus('${b.id}')" style="background:transparent;color:var(--txt2);border:1px solid var(--border);padding:4px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Cairo',sans-serif">🔄</button><button onclick="event.stopPropagation();confirmDeleteBranch('${b.id}')" style="background:rgba(239,68,68,0.1);color:var(--err);border:1px solid rgba(239,68,68,0.2);padding:4px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Cairo',sans-serif">🗑️</button></div></div>`;
   }).join('');
 }
 
@@ -1918,13 +1918,216 @@ async function submitBranch(){
   ['brName','brAddr','brMgrName','brMgrId','brPhone','brPhone2','brEmail','brPass'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
 }
 
+
+function buildBranchDetailActions(id){
+  const actsEl = document.getElementById('bdActs');
+  if(!actsEl) return;
+  actsEl.innerHTML = '';
+  
+  const btn1 = document.createElement('button');
+  btn1.className = 'bp';
+  btn1.style.background = 'linear-gradient(135deg,var(--gold3),var(--gold))';
+  btn1.style.color = 'var(--bg)';
+  btn1.textContent = '✏️ تعديل البيانات';
+  btn1.onclick = function(){ openEditBranch(id); closeModal('branchDetail'); };
+  
+  const btn2 = document.createElement('button');
+  btn2.className = 'bs';
+  btn2.textContent = '🗺️ أسعاره';
+  btn2.onclick = function(){ goToBranchPricing(id); closeModal('branchDetail'); };
+  
+  const btn3 = document.createElement('button');
+  btn3.className = 'bs';
+  btn3.style.background = 'rgba(239,68,68,0.1)';
+  btn3.style.color = 'var(--err)';
+  btn3.style.borderColor = 'rgba(239,68,68,0.3)';
+  btn3.textContent = '🗑️ حذف الفرع';
+  btn3.onclick = function(){ confirmDeleteBranch(id); closeModal('branchDetail'); };
+  
+  actsEl.appendChild(btn1);
+  actsEl.appendChild(btn2);
+  actsEl.appendChild(btn3);
+}
+
 function viewBranch(id){
   const b=(window._branches||[]).find(x=>x.id===id);if(!b) return;
   const bO=CACHE.orders.filter(o=>o.branch_id===b.id).length;
-  document.getElementById('bdTtl').innerHTML=`🏢 ${b.name}`;
-  document.getElementById('bdBody').innerHTML=`<div class="odr"><span class="odl">المدينة</span><span class="odv">📍 ${b.city||'—'}</span></div><div class="odr"><span class="odl">العنوان</span><span class="odv">${b.address||'—'}</span></div><div class="odr"><span class="odl">مدير الفرع</span><span class="odv">${b.manager_name||'—'}</span></div><div class="odr"><span class="odl">الهاتف</span><span class="odv">${b.phone||'—'}</span></div><div class="odr"><span class="odl">البريد</span><span class="odv">${b.email||'—'}</span></div><div class="odr"><span class="odl">الحالة</span><span class="badge ${b.status==='active'?'b-ok':'b-e'}">${b.status==='active'?'نشط':'متوقف'}</span></div><div class="odr" style="border:none"><span class="odl">الشحنات</span><span class="odv" style="color:var(--gold)">${bO}</span></div>`;
-  document.getElementById('bdActs').innerHTML=`<button class="bp" onclick="goToBranchPricing('${id}');closeModal('branchDetail')">🗺️ أسعاره</button><button class="bs" onclick="closeModal('branchDetail')">إغلاق</button>`;
+  const bM=CACHE.merchants.filter(m=>m.branch_id===b.id).length;
+  const bA=CACHE.agents.filter(a=>a.branch_id===b.id).length;
+  document.getElementById('bdTtl').innerHTML='🏢 '+b.name;
+  document.getElementById('bdBody').innerHTML=
+    '<div style="background:var(--goldbg);border:1px solid var(--goldborder);border-radius:11px;padding:12px 14px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">'
+    +'<div><div style="font-family:Tajawal,sans-serif;font-size:20px;font-weight:800;color:var(--gold)">'+bO+'</div><div style="font-size:10px;color:var(--txt3)">شحنة</div></div>'
+    +'<div><div style="font-family:Tajawal,sans-serif;font-size:20px;font-weight:800;color:var(--gold)">'+bM+'</div><div style="font-size:10px;color:var(--txt3)">تاجر</div></div>'
+    +'<div><div style="font-family:Tajawal,sans-serif;font-size:20px;font-weight:800;color:var(--gold)">'+bA+'</div><div style="font-size:10px;color:var(--txt3)">مندوب</div></div>'
+    +'</div>'
+    +'<div class="odr"><span class="odl">المدينة</span><span class="odv">📍 '+(b.city||'—')+'</span></div>'
+    +'<div class="odr"><span class="odl">العنوان</span><span class="odv">'+(b.address||'—')+'</span></div>'
+    +'<div class="odr"><span class="odl">مدير الفرع</span><span class="odv">'+(b.manager_name||'—')+'</span></div>'
+    +'<div class="odr"><span class="odl">الهاتف</span><span class="odv">'+(b.phone||'—')+'</span></div>'
+    +'<div class="odr"><span class="odl">البريد الإلكتروني</span><span class="odv" style="font-size:11px">'+(b.email||'—')+'</span></div>'
+    +'<div class="odr"><span class="odl">كلمة المرور</span><span class="odv">••••••••</span></div>'
+    +'<div class="odr" style="border:none"><span class="odl">الحالة</span><span class="badge '+(b.status==='active'?'b-ok':'b-e')+'">'+(b.status==='active'?'نشط':'متوقف')+'</span></div>';
+  buildBranchDetailActions(id);
   openModal('branchDetail');
+}
+
+// ─── Edit Branch ───
+function openEditBranch(id){
+  const b=(window._branches||[]).find(x=>x.id===id);if(!b) return;
+  // Remove existing edit modal if any
+  document.getElementById('editBranchModal')?.remove();
+  const div=document.createElement('div');
+  div.id='editBranchModal';
+  div.className='ov show';
+  div.innerHTML=`
+    <div class="modal" style="width:540px">
+      <button class="mc" onclick="document.getElementById('editBranchModal').remove()">✕</button>
+      <h2>✏️ تعديل بيانات ${b.name}</h2>
+      <div style="background:var(--goldbg);border:1px solid var(--goldborder);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--gold)">
+        ⚠️ عند تغيير البريد أو كلمة المرور أخبر مدير الفرع بالبيانات الجديدة
+      </div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">اسم الفرع *</label><input class="fi2" id="eb_name" value="${b.name}"></div>
+        <div class="fg"><label class="fl">المدينة *</label><input class="fi2" id="eb_city" value="${b.city||''}"></div>
+      </div>
+      <div class="fg"><label class="fl">العنوان</label><input class="fi2" id="eb_addr" value="${b.address||''}"></div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">مدير الفرع</label><input class="fi2" id="eb_mgr" value="${b.manager_name||''}"></div>
+        <div class="fg"><label class="fl">الهاتف</label><input class="fi2" id="eb_phone" value="${b.phone||''}"></div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:10px">🔐 بيانات الدخول</div>
+        <div class="fg"><label class="fl">البريد الإلكتروني *</label><input class="fi2" id="eb_email" type="email" value="${b.email||''}"></div>
+        <div class="fg" style="margin-bottom:0">
+          <label class="fl">كلمة المرور الجديدة (اتركها فارغة للإبقاء على القديمة)</label>
+          <input class="fi2" id="eb_pass" type="password" placeholder="أدخل كلمة مرور جديدة...">
+        </div>
+      </div>
+      <div class="fg" style="margin-bottom:0">
+        <label class="fl">الحالة</label>
+        <select class="fi2" id="eb_status">
+          <option value="active" ${b.status==='active'?'selected':''}>نشط</option>
+          <option value="inactive" ${b.status!=='active'?'selected':''}>متوقف</option>
+        </select>
+      </div>
+      <div class="mac" style="margin-top:14px">
+        <button class="bp" onclick="saveEditBranch('${id}')">💾 حفظ التعديلات</button>
+        <button class="bs" onclick="document.getElementById('editBranchModal').remove()">إلغاء</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(div);
+  div.addEventListener('click',e=>{if(e.target===div)div.remove();});
+}
+
+async function saveEditBranch(id){
+  const name=document.getElementById('eb_name')?.value.trim();
+  const city=document.getElementById('eb_city')?.value.trim();
+  const email=document.getElementById('eb_email')?.value.trim();
+  const pass=document.getElementById('eb_pass')?.value.trim();
+  if(!name||!city||!email){toast('⚠️ اسم الفرع والمدينة والبريد مطلوبة','warn');return;}
+  
+  const updates={
+    name, city,
+    address:document.getElementById('eb_addr')?.value||'',
+    manager_name:document.getElementById('eb_mgr')?.value||'',
+    phone:document.getElementById('eb_phone')?.value||'',
+    email,
+    status:document.getElementById('eb_status')?.value||'active',
+    updated_at:new Date().toISOString()
+  };
+  if(pass) updates.password_hash=pass;
+  
+  const {error}=await SB.from('branches').update(updates).eq('id',id);
+  if(error){toast('❌ خطأ: '+error.message,'err');return;}
+  
+  // Update local cache
+  const b=(window._branches||[]).find(x=>x.id===id);
+  if(b) Object.assign(b, updates);
+  
+  document.getElementById('editBranchModal')?.remove();
+  renderBranchesPage();
+  toast('✅ تم تحديث بيانات الفرع بنجاح!','ok');
+  
+  // Show new credentials if changed
+  if(pass){
+    setTimeout(()=>{
+      const d=document.createElement('div');
+      d.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg2);border:1px solid var(--goldborder);border-radius:16px;padding:24px;z-index:9999;min-width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.8)';
+      d.innerHTML='<div style="font-size:28px;margin-bottom:10px">🔐</div>'
+        +'<div style="font-weight:700;font-size:14px;color:var(--gold);margin-bottom:12px">بيانات الدخول الجديدة</div>'
+        +'<div style="background:var(--bg3);border-radius:9px;padding:12px;margin-bottom:10px;text-align:right">'
+        +'<div style="font-size:11px;color:var(--txt3);margin-bottom:4px">البريد الإلكتروني</div>'
+        +'<div style="font-weight:700;direction:ltr;text-align:left">'+email+'</div></div>'
+        +'<div style="background:var(--bg3);border-radius:9px;padding:12px;margin-bottom:14px;text-align:right">'
+        +'<div style="font-size:11px;color:var(--txt3);margin-bottom:4px">كلمة المرور</div>'
+        +'<div style="font-weight:700;font-family:monospace;letter-spacing:2px">'+pass+'</div></div>'
+        +'<button onclick="this.parentElement.remove()" style="background:linear-gradient(135deg,var(--gold3),var(--gold));color:var(--bg);border:none;padding:10px 24px;border-radius:10px;font-family:Cairo,sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%">حسناً ✓</button>';
+      document.body.appendChild(d);
+    },300);
+  }
+}
+
+// ─── Delete Branch with confirmation ───
+function confirmDeleteBranch(id){
+  const b=(window._branches||[]).find(x=>x.id===id);
+  if(!b) return;
+  const bO=CACHE.orders.filter(o=>o.branch_id===id).length;
+  
+  // Remove existing
+  document.getElementById('deleteBranchConfirm')?.remove();
+  const div=document.createElement('div');
+  div.id='deleteBranchConfirm';
+  div.className='ov show';
+  div.innerHTML=`
+    <div class="modal" style="width:420px;text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+      <h2 style="color:var(--err);justify-content:center">حذف الفرع نهائياً</h2>
+      <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:11px;padding:14px;margin-bottom:16px;text-align:right">
+        <div style="font-weight:700;font-size:14px;margin-bottom:6px">🏢 ${b.name}</div>
+        <div style="font-size:12px;color:var(--txt3)">📍 ${b.city||'—'} · ${b.manager_name||'—'}</div>
+        ${bO>0?'<div style="font-size:12px;color:var(--warn);margin-top:6px">⚠️ يحتوي على '+bO+' شحنة مرتبطة</div>':''}
+      </div>
+      <div style="font-size:13px;color:var(--txt2);margin-bottom:20px">
+        سيتم حذف الفرع نهائياً ولن يتمكن مديره من تسجيل الدخول مجدداً.<br>
+        <strong style="color:var(--err)">لا يمكن التراجع عن هذا الإجراء.</strong>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="executeBranchDelete('${id}')" 
+          style="flex:1;background:var(--err);color:#fff;border:none;padding:12px;border-radius:10px;font-family:Cairo,sans-serif;font-size:14px;font-weight:700;cursor:pointer">
+          🗑️ حذف نهائي
+        </button>
+        <button onclick="document.getElementById('deleteBranchConfirm').remove()"
+          style="flex:1;background:var(--bg3);color:var(--txt);border:1px solid var(--border);padding:12px;border-radius:10px;font-family:Cairo,sans-serif;font-size:14px;cursor:pointer">
+          إلغاء
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(div);
+  div.addEventListener('click',e=>{if(e.target===div)div.remove();});
+}
+
+async function executeBranchDelete(id){
+  const b=(window._branches||[]).find(x=>x.id===id);
+  const {error}=await SB.from('branches').delete().eq('id',id);
+  if(error){toast('❌ خطأ: '+error.message,'err');return;}
+  
+  // If this branch is logged in on this device, logout
+  if(currentUser?.branchId===id){
+    document.getElementById('deleteBranchConfirm')?.remove();
+    clearSession();
+    toast('تم حذف الفرع وتسجيل الخروج','warn');
+    setTimeout(()=>location.reload(),1500);
+    return;
+  }
+  
+  window._branches=(window._branches||[]).filter(x=>x.id!==id);
+  populateBranchSelects();
+  document.getElementById('deleteBranchConfirm')?.remove();
+  renderBranchesPage();
+  toast('🗑️ تم حذف الفرع "'+(b?.name||'')+'" نهائياً','ok');
 }
 
 async function toggleBranchStatus(id){
