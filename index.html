@@ -611,7 +611,7 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
           <button class="bp" onclick="chgPass()">🔐 تحديث</button>
         </div>
       </div>
-      <div class="pn"><div class="ph"><h3>🔗 إعادة ربط قاعدة البيانات</h3></div>
+      <div class="pn" id="dbSettingsSection"><div class="ph"><h3>🔗 إعادة ربط قاعدة البيانات</h3></div>
         <div style="padding:18px">
           <div class="fg"><label class="fl">Supabase URL</label><input class="fi2" id="cfgUrl2" placeholder="https://xxx.supabase.co" style="direction:ltr;text-align:left;font-size:11px"></div>
           <div class="fg"><label class="fl">Anon Key</label><input class="fi2" id="cfgKey2" placeholder="eyJ..." style="direction:ltr;text-align:left;font-size:10px"></div>
@@ -1051,11 +1051,26 @@ function showLoginError(msg){
 }
 
 function saveSession(user){
-  localStorage.setItem('wb_user', JSON.stringify(user));
+  try {
+    localStorage.setItem('wb_user', JSON.stringify(user));
+    // Also store timestamp
+    localStorage.setItem('wb_user_time', Date.now().toString());
+  } catch(e){}
 }
 
 function loadSession(){
-  try { return JSON.parse(localStorage.getItem('wb_user')||'null'); }
+  try { 
+    const stored = localStorage.getItem('wb_user');
+    if(!stored) return null;
+    const user = JSON.parse(stored);
+    // Session valid for 7 days
+    const time = +localStorage.getItem('wb_user_time')||0;
+    if(Date.now() - time > 7*24*60*60*1000){
+      localStorage.removeItem('wb_user');
+      return null;
+    }
+    return user;
+  }
   catch(e){ return null; }
 }
 
@@ -1065,14 +1080,18 @@ function clearSession(){
 }
 
 async function enterApp(){
-  // Hide login/loading screens
-  document.getElementById('loginScreen').style.display='none';
-  document.getElementById('loadingScreen').style.display='flex';
+  // Hide all auth screens
+  const ls = document.getElementById('loginScreen');
+  const ld = document.getElementById('loadingScreen');
+  const cs = document.getElementById('configScreen');
+  if(ls) ls.style.display='none';
+  if(cs) cs.style.display='none';
+  if(ld) ld.style.display='flex';
   
-  // Update UI based on role
+  // Apply role-based UI
   applyUserRole();
   
-  // Load data
+  // Load all data
   await bootApp();
 }
 
@@ -1868,13 +1887,21 @@ async function submitOrder(){
     qty:+(document.getElementById('oQty')?.value||1),
     options:opts.join('، '), notes:document.getElementById('oNotes')?.value||'',
   };
+  console.log('Inserting order:', newO);
   const {data,error}=await SB.from('orders').insert(newO).select().single();
-  if(error){toast('❌ خطأ: '+error.message,'err');return;}
+  if(error){
+    console.error('Order insert error:', error);
+    toast('❌ خطأ في الحفظ: '+error.message,'err');
+    return;
+  }
+  console.log('Order saved:', data);
   CACHE.orders.unshift({...data});
   closeModal('newOrder');
   
-  // ── Navigate immediately to orders page ──
+  // ── Navigate to orders page and refresh from DB ──
   nav(document.querySelector('[data-page=orders]'));
+  // Refresh from DB to ensure data is current
+  await loadOrdersData();
   loadOrders();
   renderDashboard();
   
@@ -2604,7 +2631,11 @@ function nav(el){
 
 function onPageOpen(pid){
   if(pid==='dashboard') renderDashboard();
-  if(pid==='orders'){ populateBranchSelects(); loadOrders(); }
+  if(pid==='orders'){
+    populateBranchSelects();
+    // Refresh orders from DB then display
+    loadOrdersData().then(()=>loadOrders());
+  }
   if(pid==='merchants') renderMerchantsPage();
   if(pid==='agents') renderAgentsPage();
   if(pid==='finance') renderFinancePage();
@@ -2625,25 +2656,26 @@ function onPageOpen(pid){
   if(pid==='notifications') renderNotifications();
   if(pid==='reports') renderReportsPage();
   if(pid==='settings'){
-    // Pre-fill saved connection data
-    const su=localStorage.getItem('wb_url')||'';
-    const sk=localStorage.getItem('wb_key')||'';
-    const u=document.getElementById('cfgUrl2');
-    const k=document.getElementById('cfgKey2');
-    if(u) u.value=su;
-    if(k) k.value=sk;
-    // Show connection status
-    const cs=document.getElementById('connStatus');
-    if(cs){
-      if(SB&&su){
+    // Hide DB settings from branch users - admin only
+    const dbSection=document.getElementById('dbSettingsSection');
+    if(dbSection){
+      dbSection.style.display = currentUser?.role==='admin' ? 'block' : 'none';
+    }
+    if(currentUser?.role==='admin'){
+      const su=localStorage.getItem('wb_url')||'';
+      const sk=localStorage.getItem('wb_key')||'';
+      const u=document.getElementById('cfgUrl2');
+      const k=document.getElementById('cfgKey2');
+      if(u) u.value=su;
+      if(k) k.value=sk;
+      const cs=document.getElementById('connStatus');
+      if(cs){
         testConn().then(ok=>{
           if(cs) cs.innerHTML=ok
             ?'<span style="color:var(--ok)">✅ متصل بـ Supabase</span>'
             :'<span style="color:var(--err)">❌ الاتصال منقطع</span>';
         });
         cs.innerHTML='🔄 جاري التحقق...';
-      } else {
-        cs.innerHTML='<span style="color:var(--warn)">⚠️ لم يتم الاتصال بعد</span>';
       }
     }
   }
@@ -2796,29 +2828,28 @@ window.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('cdlg')?.addEventListener('click',e=>{if(e.target===document.getElementById('cdlg'))closeCnf();});
   if(window.innerWidth<=1200&&window.innerWidth>900) document.getElementById('sidebar').classList.add('collapsed');
   const {url,key}=getSavedConfig();
-  if(url&&key){
-    initSB(url,key);
-    const ok=await testConn();
-    if(ok){
-      // Check saved session
-      const savedUser = loadSession();
-      if(savedUser){
-        currentUser = savedUser;
-        await enterApp();
-        return;
-      }
-      // Show login screen
-      document.getElementById('loadingScreen').style.display='none';
-      const ls=document.getElementById('loginScreen');
-      if(ls){ls.style.display='flex';}
-      return;
-    }
+  // Always init Supabase with hardcoded credentials
+  initSB(url,key);
+  
+  // Check saved session first (fast path - no network call needed)
+  const savedUser = loadSession();
+  if(savedUser){
+    currentUser = savedUser;
+    await enterApp();
+    return;
   }
+  
+  // No session - test connection then show login
+  const ok = await testConn();
   document.getElementById('loadingScreen').style.display='none';
-  const cs=document.getElementById('configScreen');
-  if(cs){cs.style.display='flex';cs.style.alignItems='center';cs.style.justifyContent='center';}
-  if(url){const el=document.getElementById('cfgUrl');if(el)el.value=url;}
-  if(key){const el=document.getElementById('cfgKey');if(el)el.value=key;}
+  if(ok){
+    const ls=document.getElementById('loginScreen');
+    if(ls){ls.style.display='flex';}
+  } else {
+    // Show config if can't connect
+    const cs=document.getElementById('configScreen');
+    if(cs){cs.style.display='flex';cs.style.alignItems='center';cs.style.justifyContent='center';}
+  }
   
   // Safety: if stuck loading after 10s, show retry
   setTimeout(()=>{
