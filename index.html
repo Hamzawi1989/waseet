@@ -364,6 +364,7 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
     <div class="ni" data-page="reports" onclick="nav(this)"><span class="ni-ico">📈</span><span class="ch">التقارير</span></div>
     <div class="nav-lbl">النظام</div>
     <div class="ni" data-page="settings" onclick="nav(this)"><span class="ni-ico">⚙️</span><span class="ch">الإعدادات</span></div>
+    <div class="ni" data-page="chat" onclick="nav(this)"><span class="ni-ico">💬</span><span class="ch">التواصل</span></div>
     <div class="ni" data-page="notifications" onclick="nav(this)"><span class="ni-ico">🔔</span><span class="ch">الإشعارات</span><span class="nbadge ch" id="badgeN" style="display:none">0</span></div>
   </div>
   <div class="sf" onclick="nav(document.querySelector('[data-page=settings]'))">
@@ -621,6 +622,30 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
           <button class="bp" onclick="reConnect()">🔗 إعادة الاتصال</button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ CHAT ══ -->
+<div id="page-chat" class="page">
+  <div class="pn" style="height:calc(100vh - 160px);display:flex;flex-direction:column">
+    <div class="ph">
+      <h3>💬 التواصل بين الفروع</h3>
+      <span id="chatOnlineCount" style="font-size:11px;color:var(--txt3)">الفروع النشطة</span>
+    </div>
+    <!-- Branch Directory -->
+    <div id="branchDirectory" style="background:var(--bg3);border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid var(--border)">
+      <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px">📋 دليل الفروع</div>
+      <div id="branchDirList" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+    <!-- Messages Area -->
+    <div id="chatMessages" style="flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:8px;min-height:200px"></div>
+    <!-- Input Area -->
+    <div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border);margin-top:8px">
+      <input id="chatInput" class="fi2" placeholder="اكتب رسالتك للفروع..." style="flex:1;margin-bottom:0"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMsg();}">
+      <button onclick="sendChatMsg()" style="background:linear-gradient(135deg,var(--gold3),var(--gold));color:var(--bg);border:none;padding:10px 16px;border-radius:10px;font-family:Cairo,sans-serif;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap">إرسال ➤</button>
     </div>
   </div>
 </div>
@@ -2720,7 +2745,7 @@ function chgPass(){
 // ════════════════════════════════════════
 //  NAVIGATION
 // ════════════════════════════════════════
-const pgTitles={dashboard:'لوحة التحكم',orders:'إدارة الشحنات',scan:'المسح الضوئي',branches:'إدارة الفروع',merchants:'إدارة التجار',agents:'إدارة المناديب',finance:'التسويات المالية',pricing:'أسعار التوصيل',reports:'التقارير',settings:'الإعدادات',notifications:'الإشعارات'};
+const pgTitles={dashboard:'لوحة التحكم',chat:'التواصل بين الفروع',orders:'إدارة الشحنات',scan:'المسح الضوئي',branches:'إدارة الفروع',merchants:'إدارة التجار',agents:'إدارة المناديب',finance:'التسويات المالية',pricing:'أسعار التوصيل',reports:'التقارير',settings:'الإعدادات',notifications:'الإشعارات'};
 
 function nav(el){
   if(!el) return;
@@ -2758,6 +2783,10 @@ function onPageOpen(pid){
     renderPricingPage();
   }
   if(pid==='notifications') renderNotifications();
+  if(pid==='chat'){
+    renderBranchDirectory();
+    initChat();
+  }
   if(pid==='reports') renderReportsPage();
   if(pid==='settings'){
     // Hide DB settings from branch users - admin only
@@ -2963,6 +2992,176 @@ window.addEventListener('DOMContentLoaded',async()=>{
     }
   }, 10000);
 });
+
+
+
+// ════════════════════════════════════════
+//  BRANCH ISOLATION & SECURITY
+// ════════════════════════════════════════
+
+// ── Prevent branch from modifying other branch data ──
+function canModify(resourceBranchId){
+  if(!currentUser) return false;
+  if(currentUser.role==='admin') return true;
+  return resourceBranchId === currentUser.branchId;
+}
+
+// ── Override deleteOrder to check permissions ──
+const _origDeleteOrder = deleteOrder;
+deleteOrder = async function(id){
+  const o = CACHE.orders.find(x=>x.id===id);
+  if(!canModify(o?.branch_id)){
+    toast('🚫 لا يمكنك حذف شحنات فرع آخر','err');
+    return;
+  }
+  await _origDeleteOrder(id);
+};
+
+// ── Override deleteMerchant to check permissions ──
+const _origDeleteMerchant = deleteMerchant;
+deleteMerchant = async function(id){
+  const m = CACHE.merchants.find(x=>x.id===id);
+  if(!canModify(m?.branch_id)){
+    toast('🚫 لا يمكنك حذف تجار فرع آخر','err');
+    return;
+  }
+  await _origDeleteMerchant(id);
+};
+
+// ── Override deleteAgent to check permissions ──
+const _origDeleteAgent = deleteAgent;
+deleteAgent = async function(id){
+  const a = CACHE.agents.find(x=>x.id===id);
+  if(!canModify(a?.branch_id)){
+    toast('🚫 لا يمكنك حذف مناديب فرع آخر','err');
+    return;
+  }
+  await _origDeleteAgent(id);
+};
+
+// ════════════════════════════════════════
+//  CHAT SYSTEM
+// ════════════════════════════════════════
+let _chatSub = null;
+let _chatMessages = [];
+
+async function initChat(){
+  await loadChatMessages();
+  subscribeToChatUpdates();
+}
+
+async function loadChatMessages(){
+  try {
+    const {data} = await SB.from('branch_messages')
+      .select('*')
+      .order('created_at', {ascending: true})
+      .limit(50);
+    _chatMessages = data||[];
+    renderChatMessages();
+  } catch(e){ 
+    console.log('Chat table may not exist yet');
+    renderChatMessages();
+  }
+}
+
+function subscribeToChatUpdates(){
+  try {
+    _chatSub = SB.channel('branch_chat')
+      .on('postgres_changes', {event:'INSERT', schema:'public', table:'branch_messages'}, (payload)=>{
+        _chatMessages.push(payload.new);
+        renderChatMessages();
+        // Show badge if not on chat page
+        if(!document.getElementById('page-chat')?.classList.contains('active')){
+          toast('💬 '+payload.new.sender_name+': '+payload.new.message.substring(0,30)+'...');
+        }
+      })
+      .subscribe();
+  } catch(e){}
+}
+
+async function sendChatMsg(){
+  const input = document.getElementById('chatInput');
+  const msg = input?.value?.trim();
+  if(!msg) return;
+  
+  const senderName = currentUser?.role==='admin' ? 'المدير العام' : ('فرع '+currentUser?.branchName);
+  const senderBranchId = currentUser?.branchId||'admin';
+  const senderPhone = currentUser?.role==='admin' ? '' : 
+    ((window._branches||[]).find(b=>b.id===currentUser?.branchId)?.phone||'');
+  
+  input.value = '';
+  
+  // Optimistic update
+  const tempMsg = {
+    id: Date.now().toString(),
+    sender_name: senderName,
+    sender_branch_id: senderBranchId,
+    message: msg,
+    created_at: new Date().toISOString(),
+    sender_phone: senderPhone
+  };
+  _chatMessages.push(tempMsg);
+  renderChatMessages();
+  
+  try {
+    const {error} = await SB.from('branch_messages').insert({
+      sender_name: senderName,
+      sender_branch_id: senderBranchId,
+      sender_phone: senderPhone,
+      message: msg
+    });
+    if(error) console.log('Chat error:', error.message);
+  } catch(e){}
+}
+
+function renderChatMessages(){
+  const el = document.getElementById('chatMessages');
+  if(!el) return;
+  
+  if(!_chatMessages.length){
+    el.innerHTML='<div class="empty"><div>💬</div><p>لا توجد رسائل — ابدأ المحادثة!</p></div>';
+    return;
+  }
+  
+  const myId = currentUser?.role==='admin' ? 'admin' : currentUser?.branchId;
+  
+  el.innerHTML = _chatMessages.map(m=>{
+    const isMe = m.sender_branch_id === myId;
+    const time = new Date(m.created_at).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
+    const date = new Date(m.created_at).toLocaleDateString('ar-LY',{day:'numeric',month:'short'});
+    return `
+      <div style="display:flex;flex-direction:column;align-items:${isMe?'flex-end':'flex-start'};gap:2px">
+        <div style="font-size:10px;color:var(--txt3)">${isMe?'':m.sender_name+' · '}${time} · ${date}</div>
+        <div style="background:${isMe?'linear-gradient(135deg,var(--gold3),var(--gold))':'var(--bg3)'};color:${isMe?'var(--bg)':'var(--txt)'};padding:10px 14px;border-radius:${isMe?'14px 14px 4px 14px':'14px 14px 14px 4px'};max-width:75%;font-size:13px;line-height:1.5;border:1px solid ${isMe?'transparent':'var(--border)'}">
+          ${m.message}
+        </div>
+        ${m.sender_phone&&!isMe?`<div style="font-size:10px;color:var(--txt3)">📞 ${m.sender_phone}</div>`:''}
+      </div>
+    `;
+  }).join('');
+  
+  // Scroll to bottom
+  el.scrollTop = el.scrollHeight;
+}
+
+function renderBranchDirectory(){
+  const el = document.getElementById('branchDirList');
+  if(!el) return;
+  const branches = window._branches||[];
+  if(!branches.length){
+    el.innerHTML='<span style="font-size:11px;color:var(--txt3)">لا توجد فروع مسجلة</span>';
+    return;
+  }
+  el.innerHTML = branches.map(b=>`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:8px 12px;display:flex;align-items:center;gap:8px">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--goldbg);border:1px solid var(--goldborder);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--gold)">${b.name.charAt(0)}</div>
+      <div>
+        <div style="font-weight:700;font-size:12px">🏢 ${b.name}</div>
+        <div style="font-size:10px;color:var(--txt3)">📍 ${b.city||'—'} ${b.phone?'· 📞 '+b.phone:''}</div>
+      </div>
+    </div>
+  `).join('');
+}
 
 </script>
 
