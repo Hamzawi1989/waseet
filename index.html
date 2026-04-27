@@ -2034,8 +2034,7 @@ async function saveEditBranch(id){
     manager_name:document.getElementById('eb_mgr')?.value||'',
     phone:document.getElementById('eb_phone')?.value||'',
     email,
-    status:document.getElementById('eb_status')?.value||'active',
-    updated_at:new Date().toISOString()
+    status:document.getElementById('eb_status')?.value||'active'
   };
   if(pass) updates.password_hash=pass;
   
