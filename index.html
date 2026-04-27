@@ -1477,14 +1477,71 @@ async function rejectOrder(id){
 }
 
 function showAgentSelect(orderId){
-  const o=CACHE.orders.find(x=>x.id===orderId);
-  // Filter agents by branch - show branch agents first, then all
-  const branchAgents=CACHE.agents.filter(a=>a.status!=='offline'&&a.branch_id===o?.branch_id);
-  const otherAgents=CACHE.agents.filter(a=>a.status!=='offline'&&a.branch_id!==o?.branch_id);
+  const o = CACHE.orders.find(x=>x.id===orderId);
+  if(!o) return;
+  
+  // ── Show ONLY agents of this order's branch ──
+  const orderBranchId = o.branch_id;
+  const branchAgents = CACHE.agents.filter(a=>
+    a.status !== 'offline' && a.branch_id === orderBranchId
+  );
+  
+  // If admin and no branch agents found, show all active agents
+  const isAdmin = currentUser?.role === 'admin';
+  const showAll = isAdmin && branchAgents.length === 0;
+  const displayAgents = showAll 
+    ? CACHE.agents.filter(a=>a.status!=='offline')
+    : branchAgents;
+  
+  const branchName = (window._branches||[]).find(b=>b.id===orderBranchId)?.name || '';
+  
   document.getElementById('agentSelectDlg')?.remove();
-  const div=document.createElement('div');
-  div.id='agentSelectDlg'; div.className='ov show';
-  div.innerHTML=`<div class="modal" style="width:440px"><button class="mc" onclick="document.getElementById('agentSelectDlg').remove()">✕</button><h2>🛵 اختر مندوب التوصيل</h2><div style="background:var(--goldbg);border:1px solid var(--goldborder);border-radius:9px;padding:10px;margin-bottom:14px;font-size:12px;color:var(--txt2)">📦 #${String(o?.order_number||0).padStart(6,'0')} — ${o?.recipient||''}</div><div class="fg"><label class="fl">المندوب *</label><select class="fi2" id="agentSelectVal"><option value="">اختر المندوب...</option>${branchAgents.map(a=>`<option value="${a.id}" data-phone="${a.phone||''}">🏢 ${a.name} — ${a.area||''} — ${a.status==='online'?'🟢 نشط':'🟡 مشغول'}</option>`).join('')}${otherAgents.length&&branchAgents.length?'<option disabled>── مناديب فروع أخرى ──</option>':''}${otherAgents.map(a=>`<option value="${a.id}" data-phone="${a.phone||''}">${a.name} — ${a.area||''} — ${a.status==='online'?'🟢 نشط':'🟡 مشغول'}</option>`).join('')}</select></div><div class="mac"><button class="bp" onclick="confirmAgentAssign('${orderId}')">✅ تعيين وإرسال</button><button class="bs" onclick="document.getElementById('agentSelectDlg').remove()">إلغاء</button></div></div>`;
+  const div = document.createElement('div');
+  div.id = 'agentSelectDlg';
+  div.className = 'ov show';
+  
+  // Build agents options
+  let agentsHtml = '<option value="">اختر المندوب...</option>';
+  if(displayAgents.length === 0){
+    agentsHtml += '<option disabled>لا يوجد مناديب نشطون في هذا الفرع</option>';
+  } else {
+    displayAgents.forEach(a=>{
+      const statusIcon = a.status==='online'?'🟢':'🟡';
+      agentsHtml += `<option value="${a.id}" data-phone="${a.phone||''}">${a.name} — ${statusIcon} ${a.status==='online'?'نشط':'مشغول'}</option>`;
+    });
+  }
+  
+  // If admin, add option to see other branches' agents
+  if(isAdmin && branchAgents.length > 0){
+    const otherAgents = CACHE.agents.filter(a=>a.status!=='offline'&&a.branch_id!==orderBranchId);
+    if(otherAgents.length){
+      agentsHtml += '<option disabled>── مناديب فروع أخرى ──</option>';
+      otherAgents.forEach(a=>{
+        const bName = (window._branches||[]).find(b=>b.id===a.branch_id)?.name||'';
+        agentsHtml += `<option value="${a.id}" data-phone="${a.phone||''}">${a.name}${bName?' — '+bName:''}</option>`;
+      });
+    }
+  }
+  
+  div.innerHTML = `
+    <div class="modal" style="width:460px">
+      <button class="mc" onclick="document.getElementById('agentSelectDlg').remove()">✕</button>
+      <h2>🛵 اختر مندوب التوصيل</h2>
+      <div style="background:var(--goldbg);border:1px solid var(--goldborder);border-radius:10px;padding:12px;margin-bottom:16px">
+        <div style="font-weight:700;font-size:13px">📦 #${String(o.order_number||0).padStart(6,'0')} — ${o.recipient||''}</div>
+        <div style="font-size:11px;color:var(--txt3);margin-top:3px">🏢 ${branchName||'—'} · 📍 ${o.area||''}</div>
+      </div>
+      ${branchAgents.length===0&&!showAll?`<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:9px;padding:10px;margin-bottom:12px;font-size:12px;color:var(--err)">⚠️ لا يوجد مناديب مسجلون في هذا الفرع — أضف مندوباً أولاً</div>`:''}
+      <div class="fg">
+        <label class="fl">المندوب${branchName?' من فرع '+branchName:''} *</label>
+        <select class="fi2" id="agentSelectVal">${agentsHtml}</select>
+      </div>
+      <div class="mac">
+        <button class="bp" onclick="confirmAgentAssign('${orderId}')">✅ تعيين وإرسال</button>
+        <button class="bs" onclick="document.getElementById('agentSelectDlg').remove()">إلغاء</button>
+      </div>
+    </div>
+  `;
   document.body.appendChild(div);
   div.addEventListener('click',e=>{if(e.target===div)div.remove();});
 }
