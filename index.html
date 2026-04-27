@@ -781,23 +781,45 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
 </div>
 
 <div class="ov" id="ov-newMerchant">
-  <div class="modal">
+  <div class="modal" style="width:560px">
     <button class="mc" onclick="closeModal('newMerchant')">✕</button>
-    <h2>🏪 تاجر جديد</h2>
-    <div class="fg2">
-      <div class="fg"><label class="fl">اسم المتجر *</label><input class="fi2" id="mName" placeholder="اسم المتجر"></div>
-      <div class="fg"><label class="fl">اسم المالك *</label><input class="fi2" id="mOwner" placeholder="الاسم"></div>
-    </div>
-    <div class="fg2">
-      <div class="fg"><label class="fl">الهاتف *</label><input class="fi2" id="mPhone" placeholder="+218 91 ..."></div>
-      <div class="fg"><label class="fl">المنطقة</label><select class="fi2" id="mCity"><option value="">اختر المدينة...</option></select></div>
-    </div>
-    <div class="fg"><label class="fl">العنوان</label><input class="fi2" id="mAddr" placeholder="عنوان المتجر"></div>
-    <div class="fg2">
-      <div class="fg"><label class="fl">رسوم التوصيل (د.ل)</label><input class="fi2" id="mFee" value="25" type="number"></div>
-      <div class="fg"><label class="fl">طريقة الدفع</label><select class="fi2" id="mPay"><option>نقداً عند التسليم</option><option>تحويل بنكي</option></select></div>
-    </div>
-    <div class="mac"><button class="bp" onclick="submitMerchant()">✅ إضافة</button><button class="bs" onclick="closeModal('newMerchant')">إلغاء</button></div>
+    <h2>🏪 تسجيل تاجر جديد</h2>
+
+```
+<div class="fg2">
+  <div class="fg"><label class="fl">اسم المتجر *</label><input class="fi2" id="mName" placeholder="اسم المتجر"></div>
+  <div class="fg"><label class="fl">اسم صاحب المتجر *</label><input class="fi2" id="mOwner" placeholder="الاسم الكامل"></div>
+</div>
+<div class="fg2">
+  <div class="fg"><label class="fl">رقم الهاتف *</label><input class="fi2" id="mPhone" placeholder="+218 91 ..." type="tel"></div>
+  <div class="fg"><label class="fl">هاتف احتياطي</label><input class="fi2" id="mPhone2" placeholder="اختياري" type="tel"></div>
+</div>
+<div class="fg2">
+  <div class="fg"><label class="fl">تخصص المتجر</label><input class="fi2" id="mSpec" placeholder="مثال: ملابس، إلكترونيات، مواد غذائية..."></div>
+  <div class="fg"><label class="fl">المدينة *</label><select class="fi2" id="mCity"><option value="">اختر المدينة...</option></select></div>
+</div>
+<div class="fg"><label class="fl">عنوان المتجر</label><input class="fi2" id="mAddr" placeholder="العنوان التفصيلي"></div>
+
+<div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
+  <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:10px">🔐 بيانات دخول التاجر</div>
+  <div style="font-size:11px;color:var(--txt3);margin-bottom:10px">يستخدم التاجر رقم هاتفه + كلمة المرور للدخول على تطبيقه الخاص</div>
+  <div class="fg2">
+    <div class="fg"><label class="fl">كلمة المرور *</label><input class="fi2" id="mPass" type="password" placeholder="••••••••"></div>
+    <div class="fg"><label class="fl">تأكيد كلمة المرور *</label><input class="fi2" id="mPass2" type="password" placeholder="••••••••"></div>
+  </div>
+</div>
+
+<div class="fg2">
+  <div class="fg"><label class="fl">رسوم التوصيل (د.ل)</label><input class="fi2" id="mFee" value="25" type="number"></div>
+  <div class="fg"><label class="fl">طريقة الدفع</label><select class="fi2" id="mPay"><option>نقداً عند التسليم</option><option>تحويل بنكي</option><option>محفظة إلكترونية</option></select></div>
+</div>
+
+<div class="mac">
+  <button class="bp" onclick="submitMerchant()">✅ حفظ التاجر</button>
+  <button class="bs" onclick="closeModal('newMerchant')">إلغاء</button>
+</div>
+```
+
   </div>
 </div>
 
@@ -1826,17 +1848,57 @@ function renderMerchantsPage(){
 }
 
 async function submitMerchant(){
-  const name=document.getElementById('mName')?.value.trim();
-  const owner=document.getElementById('mOwner')?.value.trim();
-  const phone=document.getElementById('mPhone')?.value.trim();
-  if(!name||!owner||!phone){toast('⚠️ يرجى ملء الحقول المطلوبة','warn');return;}
-  const mBranchId = currentUser?.role==='branch' ? currentUser.branchId : (document.getElementById('mBranch')?.value||null);
-  const {data,error}=await SB.from('merchants').insert({name,owner,phone,area:document.getElementById('mCity')?.value||'',branch_id:mBranchId,address:document.getElementById('mAddr')?.value||'',fee:+(document.getElementById('mFee')?.value||25),pay_method:document.getElementById('mPay')?.value||'نقداً',balance:0,orders_count:0,status:'active'}).select().single();
+  const name   = document.getElementById('mName')?.value.trim();
+  const owner  = document.getElementById('mOwner')?.value.trim();
+  const phone  = document.getElementById('mPhone')?.value.trim();
+  const phone2 = document.getElementById('mPhone2')?.value.trim()||'';
+  const spec   = document.getElementById('mSpec')?.value.trim()||'';
+  const city   = document.getElementById('mCity')?.value||'';
+  const addr   = document.getElementById('mAddr')?.value.trim()||'';
+  const pass   = document.getElementById('mPass')?.value.trim();
+  const pass2  = document.getElementById('mPass2')?.value.trim();
+  const fee    = +(document.getElementById('mFee')?.value||25);
+  const pay    = document.getElementById('mPay')?.value||'نقداً';
+
+  if(!name||!owner||!phone){toast('⚠️ اسم المتجر والمالك والهاتف مطلوبة','warn');return;}
+  if(!pass){toast('⚠️ أدخل كلمة المرور','warn');return;}
+  if(pass!==pass2){toast('❌ كلمتا المرور غير متطابقتين','err');return;}
+  if(pass.length<4){toast('⚠️ كلمة المرور 4 أحرف على الأقل','warn');return;}
+
+  const branchId = currentUser?.role==='branch' ? currentUser.branchId : (document.getElementById('mBranch')?.value||null);
+
+  const {data,error}=await SB.from('merchants').insert({
+    name, owner, phone, phone2, 
+    speciality: spec,
+    area: city, city,
+    branch_id: branchId,
+    address: addr,
+    password_hash: pass,
+    fee, pay_method: pay,
+    balance:0, orders_count:0, status:'active'
+  }).select().single();
+
   if(error){toast('❌ خطأ: '+error.message,'err');return;}
   CACHE.merchants.unshift(data);
-  renderMerchantsPage(); closeModal('newMerchant');
-  toast(`✅ تمت إضافة التاجر "${name}"!`,'ok');
-  ['mName','mOwner','mPhone','mAddr'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderMerchantsPage();
+  closeModal('newMerchant');
+  
+  // Show credentials banner
+  const d=document.createElement('div');
+  d.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg2);border:2px solid var(--ok);border-radius:16px;padding:24px 28px;z-index:9999;min-width:300px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.8)';
+  d.innerHTML='<div style="font-size:32px;margin-bottom:10px">✅</div>'
+    +'<div style="font-family:Tajawal,sans-serif;font-weight:800;font-size:16px;color:var(--ok);margin-bottom:14px">تم تسجيل التاجر!</div>'
+    +'<div style="background:var(--bg3);border-radius:9px;padding:12px;margin-bottom:8px;text-align:right">'
+    +'<div style="font-size:10px;color:var(--txt3);margin-bottom:3px">رقم الدخول (الهاتف)</div>'
+    +'<div style="font-weight:700;font-size:14px;direction:ltr;text-align:left">'+phone+'</div></div>'
+    +'<div style="background:var(--bg3);border-radius:9px;padding:12px;margin-bottom:14px;text-align:right">'
+    +'<div style="font-size:10px;color:var(--txt3);margin-bottom:3px">كلمة المرور</div>'
+    +'<div style="font-weight:700;font-size:14px;font-family:monospace;letter-spacing:2px">'+pass+'</div></div>'
+    +'<div style="font-size:11px;color:var(--txt3);margin-bottom:14px">سلّم هذه البيانات للتاجر</div>'
+    +'<button onclick="this.parentElement.remove()" style="background:linear-gradient(135deg,var(--gold3),var(--gold));color:var(--bg);border:none;padding:10px 24px;border-radius:10px;font-family:Cairo,sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%">حسناً ✓</button>';
+  document.body.appendChild(d);
+  
+  ['mName','mOwner','mPhone','mPhone2','mSpec','mAddr','mPass','mPass2'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
 }
 
 function viewMerchant(id){
