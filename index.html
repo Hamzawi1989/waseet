@@ -492,10 +492,12 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
     <button class="pb warn" style="padding:8px 16px;font-size:13px" onclick="exportCSV()">📥 تصدير CSV</button>
     <select class="fi2" style="width:140px;padding:8px 11px" id="fStatus" onchange="loadOrders()">
       <option value="">كل الحالات</option>
-      <option value="transit">جارية</option>
-      <option value="delivered">مكتملة</option>
-      <option value="pending">في الانتظار</option>
-      <option value="returned">مرتجعة</option>
+      <option value="waiting_approval">⏳ انتظار موافقة</option>
+      <option value="waiting_delivery">📋 انتظار التوصيل</option>
+      <option value="in_delivery">🚚 جارية (قيد التوصيل)</option>
+      <option value="delivered">✅ مكتملة</option>
+      <option value="returned">↩️ مرتجعة</option>
+      <option value="return_received">📥 راجع مستلم</option>
     </select>
     <select class="fi2" style="width:150px;padding:8px 11px" id="fAgent" onchange="loadOrders()">
       <option value="">كل المناديب</option>
@@ -1764,12 +1766,15 @@ function loadOrders(){
   const fs=document.getElementById('fStatus')?.value||'';
   const fb=document.getElementById('fBranch')?.value||'';
   const q=document.getElementById('srch')?.value?.toLowerCase()||'';
-  let rows=CACHE.orders.filter(o=>{
-    // Branch user: only see their branch orders
-    if(currentUser?.role==='branch' && o.branch_id!==currentUser.branchId) return false;
-    const mapped=o.status==='pending'?'waiting_approval':o.status==='transit'?'in_delivery':o.status;
-    if(fs&&mapped!==fs&&o.status!==fs) return false;
+    let rows=CACHE.orders.filter(o=>{
+    if(currentUser?.role==='branch'&&o.branch_id!==currentUser.branchId) return false;
     if(fb&&o.branch_id!==fb) return false;
+    if(fs){
+      const s=o.status;
+      if(fs==='in_delivery'&&(s==='in_delivery'||s==='transit')) return true;
+      if(fs==='waiting_approval'&&(s==='waiting_approval'||s==='pending')) return true;
+      if(s!==fs) return false;
+    }
     if(q) return (o.merchant_name||'').toLowerCase().includes(q)||(o.recipient||'').toLowerCase().includes(q)||(o.area||'').toLowerCase().includes(q)||(String(o.order_number||'')).includes(q);
     return true;
   });
@@ -2117,9 +2122,51 @@ async function submitAgent(){
 
 function viewAgent(id){
   const a=CACHE.agents.find(x=>x.id===id);if(!a) return;
-  document.getElementById('od-ttl').innerHTML=`🛵 ${a.name}`;
-  document.getElementById('od-body').innerHTML=`<div class="odr"><span class="odl">الهاتف</span><span class="odv">${a.phone||'—'}</span></div><div class="odr"><span class="odl">المنطقة</span><span class="odv">${a.area||'—'}</span></div><div class="odr"><span class="odl">المركبة</span><span class="odv">${a.vehicle||'—'}</span></div><div class="odr"><span class="odl">الشحنات</span><span class="odv" style="color:var(--gold)">${a.orders_count||0}</span></div><div class="odr"><span class="odl">التقييم</span><span class="odv" style="color:var(--gold)">⭐ ${a.rating||5}</span></div><div class="odr"><span class="odl">الراتب</span><span class="odv">${a.salary||800} د.ل</span></div><div class="odr" style="border:none"><span class="odl">الحالة</span><span class="badge ${agBadge(a.status)}">${agSt(a.status)}</span></div>`;
-  document.getElementById('od-acts').innerHTML=`<button class="bp" onclick="toggleAgentStatus('${id}');closeModal('orderDetail')">🔄 تغيير الحالة</button><button class="bs" onclick="closeModal('orderDetail')">إغلاق</button>`;
+  
+  // Get agent's active orders
+  const agentOrders = CACHE.orders.filter(o=>o.agent_id===id);
+  const activeOrders = agentOrders.filter(o=>o.status==='in_delivery'||o.status==='transit');
+  const deliveredOrders = agentOrders.filter(o=>o.status==='delivered');
+  const activeValue = activeOrders.reduce((s,o)=>s+(+o.amount||0),0);
+  const totalDelivered = deliveredOrders.length;
+  
+  const branchName = (window._branches||[]).find(b=>b.id===a.branch_id)?.name||'—';
+  
+  document.getElementById('od-ttl').innerHTML='🛵 '+a.name;
+  document.getElementById('od-body').innerHTML=
+    // Stats cards
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">'
+    +'<div style="background:var(--goldbg);border:1px solid var(--goldborder);border-radius:10px;padding:10px;text-align:center"><div style="font-family:Tajawal,sans-serif;font-size:22px;font-weight:800;color:var(--gold)">'+activeOrders.length+'</div><div style="font-size:10px;color:var(--txt3)">معه الآن</div></div>'
+    +'<div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:10px;text-align:center"><div style="font-family:Tajawal,sans-serif;font-size:22px;font-weight:800;color:var(--ok)">'+totalDelivered+'</div><div style="font-size:10px;color:var(--txt3)">وصّل</div></div>'
+    +'<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:10px;text-align:center"><div style="font-family:Tajawal,sans-serif;font-size:18px;font-weight:800;color:var(--info)">'+activeValue.toLocaleString()+'</div><div style="font-size:10px;color:var(--txt3)">قيمة (د.ل)</div></div>'
+    +'</div>'
+    // Info rows
+    +'<div class="odr"><span class="odl">الفرع</span><span class="odv">🏢 '+branchName+'</span></div>'
+    +'<div class="odr"><span class="odl">الهاتف</span><span class="odv">'+(a.phone||'—')+'</span></div>'
+    +'<div class="odr"><span class="odl">المنطقة</span><span class="odv">'+(a.area||'—')+'</span></div>'
+    +'<div class="odr"><span class="odl">المركبة</span><span class="odv">'+(a.vehicle||'—')+'</span></div>'
+    +'<div class="odr"><span class="odl">الراتب</span><span class="odv">'+(a.salary||800)+' د.ل</span></div>'
+    +'<div class="odr"><span class="odl">التقييم</span><span class="odv" style="color:var(--gold)">⭐ '+(a.rating||5)+'</span></div>'
+    +'<div class="odr" style="border:none"><span class="odl">الحالة</span><span class="badge '+agBadge(a.status)+'">'+agSt(a.status)+'</span></div>'
+    // Active orders list
+    +(activeOrders.length>0
+      ? '<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px"><div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px">🚚 الشحنات معه الآن</div>'
+        + activeOrders.map(o=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.03)"><div><div style="font-weight:600;font-size:12px">#'+String(o.order_number||0).padStart(6,'0')+' — '+(o.recipient||'')+'</div><div style="font-size:10px;color:var(--txt3)">'+( o.area||'')+'</div></div><span style="font-weight:700;color:var(--gold);font-size:12px">'+(+o.amount||0)+' د.ل</span></div>').join('')
+        + '</div>'
+      : '');
+  
+  // Use DOM for acts buttons to avoid quote issues
+  const actsEl=document.getElementById('od-acts');
+  if(actsEl){
+    actsEl.innerHTML='';
+    const tb=document.createElement('button'); tb.className='bp'; tb.textContent='🔄 تغيير الحالة';
+    tb.onclick=()=>{toggleAgentStatus(id);closeModal('orderDetail');};
+    const cb=document.createElement('button'); cb.className='bs'; cb.textContent='إغلاق';
+    cb.onclick=()=>closeModal('orderDetail');
+    actsEl.appendChild(tb); actsEl.appendChild(cb);
+  }
+
+
   openModal('orderDetail');
 }
 
