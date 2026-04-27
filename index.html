@@ -1625,9 +1625,13 @@ async function reshipsOrder(id){
 }
 
 async function updateOrderStatus(id,status,statusText){
+  // Security: branch can only modify own branch orders
+  const o=CACHE.orders.find(x=>x.id===id);
+  if(o && currentUser?.role==='branch' && o.branch_id!==currentUser.branchId){
+    toast('🚫 لا يمكنك تعديل شحنات فرع آخر','err'); return;
+  }
   const {error}=await SB.from('orders').update({status,status_text:statusText,updated_at:new Date().toISOString()}).eq('id',id);
   if(error){toast('❌ '+error.message,'err');return;}
-  const o=CACHE.orders.find(x=>x.id===id);
   if(o){o.status=status;o.status_text=statusText;}
 }
 
@@ -1810,7 +1814,7 @@ function loadOrders(){
   const el=document.getElementById('ordersT');
   if(!el) return;
   if(!rows.length){el.innerHTML='<div class="empty"><div>📭</div><p>لا توجد نتائج</p></div>';return;}
-  el.innerHTML=rows.map(o=>{const b=sb(o.status);return`<div class="tbl-row" style="grid-template-columns:85px 1fr 90px 95px 75px 105px"><span class="oid">#${String(o.order_number||0).padStart(6,'0')}</span><div><div style="font-weight:600">${o.merchant_name||'—'}</div><div class="sub">${o.recipient||'—'} · ${o.area||'—'}</div></div><span style="font-size:12px">${o.area||'—'}</span><span class="badge ${b.c}">${b.t}</span><span class="amt">${o.amount||0} د.ل</span><div class="acts"><div class="act" onclick="viewOrder('${o.id}')">👁️</div><div class="act" onclick="showStatusMenu('${o.id}',event)" style="color:var(--gold)">🔄</div><div class="act r" onclick="deleteOrder('${o.id}')">🗑️</div></div></div>`;}).join('');
+  el.innerHTML=rows.map(o=>{const b=sb(o.status);return`<div class="tbl-row" style="grid-template-columns:85px 1fr 90px 95px 75px 105px"><span class="oid">#${String(o.order_number||0).padStart(6,'0')}</span><div><div style="font-weight:600">${o.merchant_name||'—'}</div><div class="sub">${o.recipient||'—'} · ${o.area||'—'}</div></div><span style="font-size:12px">${o.area||'—'}</span><span class="badge ${b.c}">${b.t}</span><span class="amt">${o.amount||0} د.ل</span><div class="acts"><div class="act" onclick="viewOrder('${o.id}')">👁️</div><div class="act" onclick="showStatusMenu('${o.id}',event)" style="color:var(--gold)">🔄</div>${currentUser?.role!=='branch'||o.branch_id===currentUser?.branchId?`<div class="act r" onclick="deleteOrder('${o.id}')">🗑️</div>`:''}</div></div>`;}).join('');
 }
 
 function onSearch(){ loadOrders(); }
@@ -1828,7 +1832,10 @@ async function viewOrder(id){
 
 async function deleteOrder(id){
   const o=CACHE.orders.find(x=>x.id===id);
-  cnf('🗑️','حذف الشحنة',`حذف شحنة #${String(o?.order_number||0).padStart(6,'0')}؟`,async()=>{
+  if(currentUser?.role==='branch' && o?.branch_id!==currentUser.branchId){
+    toast('🚫 لا يمكنك حذف شحنات فرع آخر','err'); return;
+  }
+  cnf('🗑️','حذف الشحنة','حذف شحنة #'+String(o?.order_number||0).padStart(6,'0')+'؟',async()=>{
     await SB.from('orders').delete().eq('id',id);
     CACHE.orders=CACHE.orders.filter(x=>x.id!==id);
     renderDashboard(); loadOrders(); toast('🗑️ تم الحذف');
@@ -2081,6 +2088,9 @@ function viewMerchant(id){
 
 function settleMerchant(id){
   const m=CACHE.merchants.find(x=>x.id===id);if(!m) return;
+  if(currentUser?.role==='branch' && m.branch_id!==currentUser.branchId){
+    toast('🚫 لا يمكنك تسوية تجار فرع آخر','err'); return;
+  }
   document.getElementById('stlTtl').textContent=`💰 تسوية مع ${m.name}`;
   document.getElementById('stlBody').innerHTML=`<div class="odr"><span class="odl">التاجر</span><span class="odv">${m.name}</span></div><div class="odr"><span class="odl">المستحق</span><span class="odv amt">${(+m.balance||0).toLocaleString()} د.ل</span></div><div class="fg" style="margin-top:14px"><label class="fl">طريقة التحويل</label><select class="fi2"><option>تحويل بنكي</option><option>نقداً</option><option>محفظة إلكترونية</option></select></div><div class="fg"><label class="fl">ملاحظات</label><input class="fi2" id="stlNotes" placeholder="ملاحظات..."></div>`;
   document.getElementById('stlConfirm').onclick=async()=>{const amt=+m.balance||0;await SB.from('settlements').insert({merchant_id:m.id,merchant_name:m.name,amount:amt,notes:document.getElementById('stlNotes')?.value||''});await SB.from('merchants').update({balance:0}).eq('id',m.id);m.balance=0;renderMerchantsPage();renderFinSummary();closeModal('settle');toast(`✅ تمت تسوية ${m.name} (${amt.toLocaleString()} د.ل)`,'ok');};
@@ -2088,6 +2098,7 @@ function settleMerchant(id){
 }
 
 async function settleAll(){
+  if(currentUser?.role!=='admin'){toast('🚫 المدير العام فقط','err');return;}
   cnf('💰','تسوية شاملة','تصفير مستحقات جميع التجار؟',async()=>{
     for(const m of CACHE.merchants){if(+m.balance>0){await SB.from('settlements').insert({merchant_id:m.id,merchant_name:m.name,amount:+m.balance});await SB.from('merchants').update({balance:0}).eq('id',m.id);m.balance=0;}}
     renderMerchantsPage();renderFinSummary();toast('✅ تمت التسوية الشاملة!','ok');
@@ -2096,7 +2107,10 @@ async function settleAll(){
 
 async function deleteMerchant(id){
   const m=CACHE.merchants.find(x=>x.id===id);
-  cnf('🗑️','حذف التاجر',`حذف "${m?.name}"؟`,async()=>{await SB.from('merchants').delete().eq('id',id);CACHE.merchants=CACHE.merchants.filter(x=>x.id!==id);renderMerchantsPage();toast('🗑️ تم الحذف');});
+  if(currentUser?.role==='branch' && m?.branch_id!==currentUser.branchId){
+    toast('🚫 لا يمكنك حذف تجار فرع آخر','err'); return;
+  }
+  cnf('🗑️','حذف التاجر','حذف "'+m?.name+'"؟',async()=>{await SB.from('merchants').delete().eq('id',id);CACHE.merchants=CACHE.merchants.filter(x=>x.id!==id);renderMerchantsPage();toast('🗑️ تم الحذف');});
 }
 
 // ════════════════════════════════════════
@@ -2197,15 +2211,21 @@ function viewAgent(id){
 
 async function toggleAgentStatus(id){
   const a=CACHE.agents.find(x=>x.id===id);if(!a) return;
+  if(currentUser?.role==='branch' && a.branch_id!==currentUser.branchId){
+    toast('🚫 لا يمكنك تعديل مناديب فرع آخر','err'); return;
+  }
   const ns={online:'busy',busy:'offline',offline:'online'}[a.status];
   await SB.from('agents').update({status:ns}).eq('id',id);
   a.status=ns;renderAgentsPage();renderDashAgents();
-  toast(`🔄 ${a.name}: ${agSt(ns)}`);
+  toast('🔄 '+a.name+': '+agSt(ns));
 }
 
 async function deleteAgent(id){
   const a=CACHE.agents.find(x=>x.id===id);
-  cnf('🗑️','حذف المندوب',`حذف "${a?.name}"؟`,async()=>{await SB.from('agents').delete().eq('id',id);CACHE.agents=CACHE.agents.filter(x=>x.id!==id);renderAgentsPage();renderDashAgents();toast('🗑️ تم الحذف');});
+  if(currentUser?.role==='branch' && a?.branch_id!==currentUser.branchId){
+    toast('🚫 لا يمكنك حذف مناديب فرع آخر','err'); return;
+  }
+  cnf('🗑️','حذف المندوب','حذف "'+a?.name+'"؟',async()=>{await SB.from('agents').delete().eq('id',id);CACHE.agents=CACHE.agents.filter(x=>x.id!==id);renderAgentsPage();renderDashAgents();toast('🗑️ تم الحذف');});
 }
 
 async function payAll(){
@@ -2380,6 +2400,9 @@ function openEditBranch(id){
 }
 
 async function saveEditBranch(id){
+  if(currentUser?.role!=='admin'){
+    toast('🚫 المدير العام فقط يمكنه تعديل بيانات الفروع','err'); return;
+  }
   const name=document.getElementById('eb_name')?.value.trim();
   const city=document.getElementById('eb_city')?.value.trim();
   const email=document.getElementById('eb_email')?.value.trim();
@@ -2467,6 +2490,9 @@ function confirmDeleteBranch(id){
 }
 
 async function executeBranchDelete(id){
+  if(currentUser?.role!=='admin'){
+    toast('🚫 المدير العام فقط يمكنه حذف الفروع','err'); return;
+  }
   const b=(window._branches||[]).find(x=>x.id===id);
   const {error}=await SB.from('branches').delete().eq('id',id);
   if(error){toast('❌ خطأ: '+error.message,'err');return;}
@@ -2579,8 +2605,13 @@ function renderPricingPage(){
 
 async function editAreaPrice(id,val){
   const price=+val;if(isNaN(price)||price<0) return;
+  const p=CACHE.pricing.find(x=>x.id===id);
+  // Branch can only edit own branch pricing
+  if(currentUser?.role==='branch' && p?.branch_id!==currentUser.branchId){
+    toast('🚫 لا يمكنك تعديل أسعار فرع آخر','err'); return;
+  }
   await SB.from('pricing').update({price}).eq('id',id);
-  const p=CACHE.pricing.find(x=>x.id===id);if(p)p.price=price;
+  if(p) p.price=price;
 }
 
 async function savePricing(){ toast('✅ الأسعار تُحفظ تلقائياً عند التعديل','ok'); }
@@ -2621,6 +2652,10 @@ async function submitArea(){
 }
 
 async function deleteArea(id){
+  const p=CACHE.pricing.find(x=>x.id===id);
+  if(currentUser?.role==='branch' && p?.branch_id!==currentUser.branchId){
+    toast('🚫 لا يمكنك حذف مناطق فرع آخر','err'); return;
+  }
   cnf('🗑️','حذف المنطقة','حذف هذه المنطقة؟',async()=>{await SB.from('pricing').delete().eq('id',id);CACHE.pricing=CACHE.pricing.filter(x=>x.id!==id);renderPricingPage();toast('🗑️ تم الحذف');});
 }
 
@@ -3006,38 +3041,7 @@ function canModify(resourceBranchId){
   return resourceBranchId === currentUser.branchId;
 }
 
-// ── Override deleteOrder to check permissions ──
-const _origDeleteOrder = deleteOrder;
-deleteOrder = async function(id){
-  const o = CACHE.orders.find(x=>x.id===id);
-  if(!canModify(o?.branch_id)){
-    toast('🚫 لا يمكنك حذف شحنات فرع آخر','err');
-    return;
-  }
-  await _origDeleteOrder(id);
-};
-
-// ── Override deleteMerchant to check permissions ──
-const _origDeleteMerchant = deleteMerchant;
-deleteMerchant = async function(id){
-  const m = CACHE.merchants.find(x=>x.id===id);
-  if(!canModify(m?.branch_id)){
-    toast('🚫 لا يمكنك حذف تجار فرع آخر','err');
-    return;
-  }
-  await _origDeleteMerchant(id);
-};
-
-// ── Override deleteAgent to check permissions ──
-const _origDeleteAgent = deleteAgent;
-deleteAgent = async function(id){
-  const a = CACHE.agents.find(x=>x.id===id);
-  if(!canModify(a?.branch_id)){
-    toast('🚫 لا يمكنك حذف مناديب فرع آخر','err');
-    return;
-  }
-  await _origDeleteAgent(id);
-};
+// Security checks moved inside each function directly
 
 // ════════════════════════════════════════
 //  CHAT SYSTEM
