@@ -1489,9 +1489,11 @@ function renderDashboard(){
   const {orders,merchants,agents}=CACHE;
   const branches=window._branches||[];
   // Filter by branch for branch managers
-  const branchOrders = currentUser?.role==='branch' ? orders.filter(o=>o.branch_id===currentUser.branchId) : orders;
-  const branchMerchants = currentUser?.role==='branch' ? CACHE.merchants.filter(m=>m.branch_id===currentUser.branchId) : CACHE.merchants;
-  const branchAgents2 = currentUser?.role==='branch' ? agents.filter(a=>a.branch_id===currentUser.branchId) : agents;
+  const isBranch = currentUser?.role==='branch';
+  const bid = currentUser?.branchId;
+  const branchOrders = isBranch ? orders.filter(o=>o.branch_id===bid) : orders;
+  const branchMerchants = isBranch ? CACHE.merchants.filter(m=>m.branch_id===bid) : CACHE.merchants;
+  const branchAgents2 = isBranch ? agents.filter(a=>a.branch_id===bid) : agents;
   const delivered=branchOrders.filter(o=>o.status==='delivered').length;
   const revenue=branchOrders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(+o.fee||0),0);
   const activeAgents=branchAgents2.filter(a=>a.status==='online'||a.status==='busy').length;
@@ -1502,7 +1504,7 @@ function renderDashboard(){
   if(mapCount) mapCount.textContent=activeAgents+' نشط';
   const ds=document.getElementById('dashStats');
   if(ds) ds.innerHTML=`
-    <div class="sc" onclick="nav(document.querySelector('[data-page=orders]'))"><div class="sct"><div class="sci">📦</div><span class="tr2 up">▲ 12%</span></div><div class="sv">${orders.length.toLocaleString()}</div><div class="sl">الشحنات</div><div class="ss">${delivered} مكتملة · ${pending} بانتظار موافقة</div></div>
+    <div class="sc" onclick="nav(document.querySelector('[data-page=orders]'))"><div class="sct"><div class="sci">📦</div><span class="tr2 up">▲ 12%</span></div><div class="sv">${branchOrders.length.toLocaleString()}</div><div class="sl">الشحنات</div><div class="ss">${delivered} مكتملة · ${pending} بانتظار موافقة</div></div>
     <div class="sc" onclick="nav(document.querySelector('[data-page=finance]'))"><div class="sct"><div class="sci">💰</div><span class="tr2 up">▲ 8.7%</span></div><div class="sv">${revenue.toLocaleString()}</div><div class="sl">الإيرادات (د.ل)</div></div>
     <div class="sc" onclick="nav(document.querySelector('[data-page=agents]'))"><div class="sct"><div class="sci">🛵</div><span class="tr2 up">▲ 3%</span></div><div class="sv">${activeAgents}</div><div class="sl">المناديب النشطون</div><div class="ss">من أصل ${agents.length}</div></div>
     <div class="sc" onclick="nav(document.querySelector('[data-page=branches]'))"><div class="sct"><div class="sci">🏢</div></div><div class="sv">${branches.filter(b=>b.status==='active').length}</div><div class="sl">الفروع النشطة</div><div class="ss">من أصل ${branches.length}</div></div>
@@ -1515,6 +1517,8 @@ function renderDashboard(){
 
 function renderDashOrders(filter='all'){
   const rows=CACHE.orders.filter(o=>{
+    // Branch filter FIRST
+    if(currentUser?.role==='branch'&&o.branch_id!==currentUser.branchId) return false;
     if(filter==='all') return true;
     if(o.status===filter) return true;
     if(filter==='in_delivery'&&o.status==='transit') return true;
@@ -1536,7 +1540,10 @@ function filterDash(el,f){
 }
 
 function renderDashAgents(){
-  const list=CACHE.agents.filter(a=>a.status!=='offline').slice(0,5);
+  const list=CACHE.agents.filter(a=>{
+    if(currentUser?.role==='branch'&&a.branch_id!==currentUser.branchId) return false;
+    return a.status!=='offline';
+  }).slice(0,5);
   const el=document.getElementById('dashAgents');
   if(!el) return;
   if(!list.length){el.innerHTML='<div class="empty"><div>🛵</div><p>لا يوجد مناديب نشطون</p></div>';return;}
@@ -2438,7 +2445,10 @@ function openModal(id){
       if(bel) bel.value=currentUser.branchId;
     }
     const ms=document.getElementById('oMerch');
-    if(ms) ms.innerHTML='<option value="">ابحث أو اختر التاجر...</option>'+CACHE.merchants.filter(m=>m.status==='active').map(m=>`<option value="${m.id}">${m.name} — ${m.owner||''}</option>`).join('');
+    const availMerchants = currentUser?.role==='branch' 
+      ? CACHE.merchants.filter(m=>m.status==='active'&&m.branch_id===currentUser.branchId)
+      : CACHE.merchants.filter(m=>m.status==='active');
+    if(ms) ms.innerHTML='<option value="">ابحث أو اختر التاجر...</option>'+availMerchants.map(m=>`<option value="${m.id}">${m.name} — ${m.owner||''}</option>`).join('');
     const cities=window._cities||[];
     const cityEl=document.getElementById('oCity');
     if(cityEl) cityEl.innerHTML='<option value="">اختر المدينة...</option>'+cities.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
