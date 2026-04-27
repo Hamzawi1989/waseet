@@ -986,16 +986,23 @@ async function doLogin(){
     }
     
     // 2. Check branch credentials from DB
+    // Search by email (case-insensitive) - try ilike for case insensitivity
     const {data:branches, error} = await SB.from('branches')
-      .select('id,name,email,password_hash,city,status')
-      .eq('email', email)
-      .eq('status','active');
+      .select('id,name,email,password_hash,city,status');
     
     if(error) throw error;
     
     if(branches && branches.length > 0){
-      const branch = branches.find(b => b.password_hash === pass);
+      // Case-insensitive email match + exact password match
+      const branch = branches.find(b => 
+        b.email?.toLowerCase().trim() === email &&
+        b.password_hash === pass
+      );
       if(branch){
+        if(branch.status !== 'active'){
+          showLoginError('هذا الفرع موقوف — تواصل مع المدير العام');
+          return;
+        }
         currentUser = { 
           role:'branch', 
           branchId: branch.id, 
@@ -1010,7 +1017,13 @@ async function doLogin(){
       }
     }
     
-    showLoginError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+    // Debug: show how many branches were found
+    const foundCount = branches ? branches.length : 0;
+    if(foundCount === 0){
+      showLoginError('لم يتم العثور على حساب بهذا البريد — تحقق من البريد الإلكتروني');
+    } else {
+      showLoginError('كلمة المرور غير صحيحة — تحقق من كلمة المرور');
+    }
   } catch(e){
     showLoginError('خطأ في الاتصال: '+e.message);
   } finally {
@@ -1058,42 +1071,37 @@ function applyUserRole(){
   const siName = document.querySelector('.si h4');
   if(siName) siName.textContent = currentUser.name;
   const siRole = document.querySelector('.si span');
-  if(siRole) siRole.textContent = currentUser.role==='admin'?'مدير عام':'مدير فرع';
+  if(siRole) siRole.textContent = currentUser.role==='admin'?'مدير عام':'🏢 '+currentUser.branchName;
   
-  // Hide admin-only menu items for branch managers
-  if(currentUser.role === 'branch'){
-    // Hide branches page from sidebar
-    const branchNav = document.querySelector('[data-page="branches"]');
-    if(branchNav) branchNav.style.display='none';
-    // Hide reports nav
-    const reportsNav = document.querySelector('[data-page="reports"]');
-    if(reportsNav) reportsNav.style.display='none';
-  }
-  
-  // Add logout button to settings
-  const logoutContainer = document.getElementById('logoutBtn');
-  if(!logoutContainer){
+  // Add logout button (top left)
+  if(!document.getElementById('logoutBtn')){
     const div = document.createElement('div');
     div.id = 'logoutBtn';
-    div.style.cssText='position:fixed;top:12px;left:12px;z-index:100';
-    div.innerHTML='<button onclick="doLogout()" style="background:rgba(239,68,68,0.1);color:var(--err);border:1px solid rgba(239,68,68,0.2);padding:6px 12px;border-radius:9px;font-family:Cairo,sans-serif;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">🚪 خروج</button>';
+    div.style.cssText='position:fixed;bottom:16px;left:12px;z-index:200';
+    div.innerHTML='<button onclick="doLogout()" style="background:rgba(239,68,68,0.1);color:var(--err);border:1px solid rgba(239,68,68,0.25);padding:8px 14px;border-radius:10px;font-family:Cairo,sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,0,0,.3)">🚪 تسجيل الخروج</button>';
     document.body.appendChild(div);
   }
   
-  // Show branch badge in topbar
   if(currentUser.role === 'branch'){
-    const tit = document.getElementById('pgTitle');
-    if(tit) tit.style.cssText='font-size:14px;font-weight:700';
-    // Add branch badge
-    let badge = document.getElementById('branchBadge');
-    if(!badge){
-      badge = document.createElement('div');
+    // Hide branches/reports/finance nav items
+    ['branches','reports'].forEach(pg=>{
+      const el=document.querySelector('[data-page="'+pg+'"]');
+      if(el) el.style.display='none';
+    });
+    
+    // Add prominent branch badge in topbar
+    if(!document.getElementById('branchBadge')){
+      const badge = document.createElement('div');
       badge.id = 'branchBadge';
-      badge.style.cssText='background:var(--goldbg);border:1px solid var(--goldborder);color:var(--gold);padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;display:flex;align-items:center;gap:4px';
+      badge.style.cssText='background:linear-gradient(135deg,rgba(212,160,23,0.15),rgba(212,160,23,0.08));border:1px solid var(--goldborder);color:var(--gold);padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap';
       badge.innerHTML = '🏢 '+currentUser.branchName;
       const tl = document.querySelector('.tl');
       if(tl) tl.appendChild(badge);
     }
+    
+    // Change topbar title style
+    const tt = document.querySelector('.tt');
+    if(tt) tt.style.display='none'; // Hide page title to make room
   }
 }
 
