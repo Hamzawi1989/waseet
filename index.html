@@ -1284,14 +1284,19 @@ async function fetchCities(){
 async function loadOrderNum(){
   try {
     const {data,error} = await SB.from('order_counter').select('next_num').eq('id',1).single();
-    if(!error && data) {
-      DB.nextOrderNum = data.next_num||1;
+    if(!error && data && data.next_num){
+      DB.nextOrderNum = data.next_num;
     } else {
-      // Try to create the counter row
-      const {data:d2} = await SB.from('order_counter').insert({id:1,next_num:1}).select().single();
-      if(d2) DB.nextOrderNum = 1;
+      // Create counter starting from max existing order + 1
+      const {data:maxData} = await SB.from('orders').select('order_number').order('order_number',{ascending:false}).limit(1);
+      const maxNum = (maxData && maxData.length>0) ? (+maxData[0].order_number||0) : 0;
+      DB.nextOrderNum = maxNum + 1;
+      // Save to counter
+      await SB.from('order_counter').upsert({id:1, next_num:DB.nextOrderNum+1});
     }
-  } catch(e){ DB.nextOrderNum = DB.nextOrderNum||1; }
+  } catch(e){ 
+    if(!DB.nextOrderNum || DB.nextOrderNum < 1) DB.nextOrderNum = 1;
+  }
 }
 
 // ════════════════════════════════════════
@@ -1464,26 +1469,28 @@ async function markOrderDelivered(id){
   const o=CACHE.orders.find(x=>x.id===id);
   if(o?.merchant_id){
     const m=CACHE.merchants.find(x=>x.id===o.merchant_id);
-    if(m){ const nb=(+m.balance||0)+(+o.amount||0); await SB.from('merchants').update({balance:nb,orders_count:(+m.orders_count||0)+1}).eq('id',m.id); m.balance=nb; m.orders_count=(+m.orders_count||0)+1; }
+    if(m){ const nb=(+m.balance||0)+(+o.fee||0); await SB.from('merchants').update({balance:nb,orders_count:(+m.orders_count||0)+1}).eq('id',m.id); m.balance=nb; m.orders_count=(+m.orders_count||0)+1; }
   }
-  addNotif('✅','rgba(34,197,94,0.1)',`تم توصيل شحنة #${String(o?.order_number||0).padStart(6,'0')}`);
-  renderDashboard(); if(document.getElementById('page-orders')?.classList.contains('active')) loadOrders();
-  toast('✅ تم التوصيل! أضيف للمستحقات','ok');
+  const num=String(o?.order_number||0).padStart(6,'0');
+  addNotif('✅','rgba(34,197,94,0.1)','تم توصيل شحنة #'+num);
+  renderDashboard();
+  loadOrders();
+  toast('✅ شحنة #'+num+' تم التوصيل!','ok');
 }
 
 async function markOrderReturned(id){
   await updateOrderStatus(id,'returned','تم الاسترجاع');
   const o=CACHE.orders.find(x=>x.id===id);
-  addNotif('↩️','rgba(239,68,68,0.1)',`شحنة #${String(o?.order_number||0).padStart(6,'0')} مرتجعة`);
-  renderDashboard(); if(document.getElementById('page-orders')?.classList.contains('active')) loadOrders();
+  addNotif('↩️','rgba(239,68,68,0.1)','شحنة #'+String(o?.order_number||0).padStart(6,'0')+' مرتجعة');
+  renderDashboard(); loadOrders();
   toast('↩️ تم تسجيل الإرجاع','warn');
 }
 
 async function markReturnReceived(id){
   await updateOrderStatus(id,'return_received','راجع مستلم');
   const o=CACHE.orders.find(x=>x.id===id);
-  addNotif('📥','rgba(212,160,23,0.1)',`راجع مستلم: شحنة #${String(o?.order_number||0).padStart(6,'0')}`);
-  renderDashboard(); if(document.getElementById('page-orders')?.classList.contains('active')) loadOrders();
+  addNotif('📥','rgba(212,160,23,0.1)','راجع مستلم: شحنة #'+String(o?.order_number||0).padStart(6,'0'));
+  renderDashboard(); loadOrders();
   toast('📥 تم استلام المرتجع','ok');
 }
 
@@ -1804,13 +1811,13 @@ async function submitOrder(){
   if(document.getElementById('optNoOpen')?.checked) opts.push('لا يُسمح بفتحه');
   if(document.getElementById('optOpen')?.checked) opts.push('يُسمح بفتحه');
   if(document.getElementById('optMeasure')?.checked) opts.push('مسموح القياس');
-  let orderNum=DB.nextOrderNum||1;
+  // Get next sequential order number
+  await loadOrderNum();
+  let orderNum = DB.nextOrderNum||1;
   try{
-    const {data:cnt}=await SB.from('order_counter').select('next_num').eq('id',1).single();
-    if(cnt&&cnt.next_num){orderNum=cnt.next_num;}
-    await SB.from('order_counter').update({next_num:orderNum+1}).eq('id',1);
+    await SB.from('order_counter').upsert({id:1, next_num:orderNum+1});
   }catch(e){}
-  DB.nextOrderNum=orderNum+1;
+  DB.nextOrderNum = orderNum+1;
   const newO={
     order_number:orderNum, merchant_id:merchant?.id||null, merchant_name:merchant?.name||'',
     recipient:rec, phone:ph, phone2:document.getElementById('oPh2')?.value||'',
@@ -1827,9 +1834,15 @@ async function submitOrder(){
   if(error){toast('❌ خطأ: '+error.message,'err');return;}
   CACHE.orders.unshift({...data});
   closeModal('newOrder');
+  
+  // ── Navigate immediately to orders page ──
+  nav(document.querySelector('[data-page=orders]'));
+  loadOrders();
   renderDashboard();
-  showOrderSuccess(orderNum,rec);
-  addNotif('📦','rgba(212,160,23,0.1)',`شحنة جديدة #${String(orderNum).padStart(6,'0')} — ${rec}`);
+  
+  // ── Success toast ──
+  toast('✅ شحنة #'+String(orderNum).padStart(6,'0')+' — '+rec+' تم إنشاؤها!','ok');
+  addNotif('📦','rgba(212,160,23,0.1)','شحنة جديدة #'+String(orderNum).padStart(6,'0')+' — '+rec);
 }
 
 function showOrderSuccess(num,recipient){
