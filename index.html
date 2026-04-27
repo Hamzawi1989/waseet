@@ -1071,37 +1071,43 @@ function applyUserRole(){
   const siName = document.querySelector('.si h4');
   if(siName) siName.textContent = currentUser.name;
   const siRole = document.querySelector('.si span');
-  if(siRole) siRole.textContent = currentUser.role==='admin'?'مدير عام':'🏢 '+currentUser.branchName;
+  if(siRole) siRole.textContent = currentUser.role==='admin'?'مدير عام':'مدير فرع';
   
-  // Add logout button (top left)
+  // Logout button (fixed bottom left)
   if(!document.getElementById('logoutBtn')){
-    const div = document.createElement('div');
-    div.id = 'logoutBtn';
-    div.style.cssText='position:fixed;bottom:16px;left:12px;z-index:200';
-    div.innerHTML='<button onclick="doLogout()" style="background:rgba(239,68,68,0.1);color:var(--err);border:1px solid rgba(239,68,68,0.25);padding:8px 14px;border-radius:10px;font-family:Cairo,sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,0,0,.3)">🚪 تسجيل الخروج</button>';
+    const div=document.createElement('div');
+    div.id='logoutBtn';
+    div.style.cssText='position:fixed;bottom:14px;left:10px;z-index:500';
+    div.innerHTML='<button onclick="doLogout()" style="background:rgba(239,68,68,0.12);color:var(--err);border:1px solid rgba(239,68,68,0.25);padding:8px 14px;border-radius:10px;font-family:Cairo,sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">🚪 تسجيل الخروج</button>';
     document.body.appendChild(div);
   }
   
-  if(currentUser.role === 'branch'){
-    // Hide branches/reports/finance nav items
-    ['branches','reports'].forEach(pg=>{
+  if(currentUser.role==='branch'){
+    // ── Hide pages not relevant to branch ──
+    const hidePages=['branches','reports','finance'];
+    hidePages.forEach(pg=>{
       const el=document.querySelector('[data-page="'+pg+'"]');
       if(el) el.style.display='none';
     });
     
-    // Add prominent branch badge in topbar
+    // ── Hide nav labels if all items hidden ──
+    document.querySelectorAll('.nav-lbl').forEach(lbl=>{
+      // Hide "المالية" label if finance is hidden
+      if(lbl.textContent.trim()==='المالية') lbl.style.display='none';
+    });
+    
+    // ── Branch badge in topbar ──
     if(!document.getElementById('branchBadge')){
-      const badge = document.createElement('div');
-      badge.id = 'branchBadge';
-      badge.style.cssText='background:linear-gradient(135deg,rgba(212,160,23,0.15),rgba(212,160,23,0.08));border:1px solid var(--goldborder);color:var(--gold);padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap';
-      badge.innerHTML = '🏢 '+currentUser.branchName;
-      const tl = document.querySelector('.tl');
+      const badge=document.createElement('div');
+      badge.id='branchBadge';
+      badge.style.cssText='background:linear-gradient(135deg,rgba(212,160,23,0.15),rgba(212,160,23,0.06));border:1px solid var(--goldborder);color:var(--gold);padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700';
+      badge.textContent='🏢 '+currentUser.branchName;
+      const tl=document.querySelector('.tl');
       if(tl) tl.appendChild(badge);
     }
     
-    // Change topbar title style
-    const tt = document.querySelector('.tt');
-    if(tt) tt.style.display='none'; // Hide page title to make room
+    // ── Quick actions: hide admin-only items ──
+    // Will be filtered in renderDashboard
   }
 }
 
@@ -1509,6 +1515,9 @@ function renderDashboard(){
     <div class="sc" onclick="nav(document.querySelector('[data-page=agents]'))"><div class="sct"><div class="sci">🛵</div><span class="tr2 up">▲ 3%</span></div><div class="sv">${activeAgents}</div><div class="sl">المناديب النشطون</div><div class="ss">من أصل ${agents.length}</div></div>
     <div class="sc" onclick="nav(document.querySelector('[data-page=branches]'))"><div class="sct"><div class="sci">🏢</div></div><div class="sv">${branches.filter(b=>b.status==='active').length}</div><div class="sl">الفروع النشطة</div><div class="ss">من أصل ${branches.length}</div></div>
   `;
+
+  // Quick actions - filter based on role
+  renderQuickActions();
   renderDashOrders('all');
   renderDashAgents();
   renderWeekChart();
@@ -1561,18 +1570,75 @@ function renderWeekChart(){
   el.innerHTML=days.map((d,i)=>`<div class="bw"><div class="bar" style="height:${Math.max(4,(vals[i]/max)*100)}%" title="${d}: ${vals[i]}"></div><span class="bl">${d}</span></div>`).join('');
 }
 
+
+function renderQuickActions(){
+  const el=document.querySelector('.qa-grid');
+  if(!el) return;
+  const isBranch=currentUser?.role==='branch';
+  if(isBranch){
+    el.innerHTML=`
+      <div class="qa" onclick="openModal('newOrder')"><i>📦</i><span>شحنة جديدة</span></div>
+      <div class="qa" onclick="openScan()"><i>📷</i><span>مسح ضوئي</span></div>
+      <div class="qa" onclick="openModal('newMerchant')"><i>🏪</i><span>تاجر جديد</span></div>
+      <div class="qa" onclick="openModal('newAgent')"><i>🛵</i><span>مندوب جديد</span></div>
+    `;
+  } else {
+    el.innerHTML=`
+      <div class="qa" onclick="openModal('newOrder')"><i>📦</i><span>شحنة جديدة</span></div>
+      <div class="qa" onclick="openScan()"><i>📷</i><span>مسح ضوئي</span></div>
+      <div class="qa" onclick="openModal('newMerchant')"><i>🏪</i><span>تاجر جديد</span></div>
+      <div class="qa" onclick="openModal('newAgent')"><i>🛵</i><span>مندوب جديد</span></div>
+      <div class="qa" onclick="openModal('newBranch')"><i>🏢</i><span>فرع جديد</span></div>
+      <div class="qa" onclick="exportCSV()"><i>📋</i><span>تصدير تقرير</span></div>
+      <div class="qa" onclick="nav(document.querySelector('[data-page=pricing]'))"><i>🗺️</i><span>الأسعار</span></div>
+      <div class="qa" onclick="nav(document.querySelector('[data-page=finance]'))"><i>💰</i><span>التسويات</span></div>
+    `;
+  }
+}
 function renderFinSummary(){
-  const revenue=CACHE.orders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(+o.fee||0),0);
-  const merchantBal=CACHE.merchants.reduce((s,m)=>s+(+m.balance||0),0);
-  const agentPay=CACHE.agents.reduce((s,a)=>s+(+a.salary||800),0);
   const el=document.getElementById('finSummary');
   if(!el) return;
-  el.innerHTML=`
-    <div class="fi"><div class="fi-l"><div class="fi-ico">💵</div><div><h4>إيرادات رسوم التوصيل</h4><span>مكتملة</span></div></div><div class="fi-a pos">+${revenue.toLocaleString()} د.ل</div></div>
-    <div class="fi"><div class="fi-l"><div class="fi-ico">💳</div><div><h4>مستحقات التجار</h4><span>جاهزة للتحويل</span></div></div><div class="fi-a w">${merchantBal.toLocaleString()} د.ل</div></div>
-    <div class="fi"><div class="fi-l"><div class="fi-ico">🛵</div><div><h4>رواتب المناديب</h4><span>هذا الشهر</span></div></div><div class="fi-a neg">-${agentPay.toLocaleString()} د.ل</div></div>
-    <div class="fi"><div class="fi-l"><div class="fi-ico">📊</div><div><h4>صافي الربح</h4><span>تقديري</span></div></div><div class="fi-a pos">+${Math.max(0,revenue-agentPay).toLocaleString()} د.ل</div></div>
-  `;
+  
+  // Branch users see their branch summary only
+  const isBranch = currentUser?.role==='branch';
+  const bid = currentUser?.branchId;
+  
+  const orders = isBranch ? CACHE.orders.filter(o=>o.branch_id===bid) : CACHE.orders;
+  const merchants = isBranch ? CACHE.merchants.filter(m=>m.branch_id===bid) : CACHE.merchants;
+  const agents = isBranch ? CACHE.agents.filter(a=>a.branch_id===bid) : CACHE.agents;
+  
+  const revenue=orders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(+o.fee||0),0);
+  const merchantBal=merchants.reduce((s,m)=>s+(+m.balance||0),0);
+  const agentPay=agents.reduce((s,a)=>s+(+a.salary||800),0);
+  const totalOrders=orders.length;
+  const delivered=orders.filter(o=>o.status==='delivered').length;
+  
+  if(isBranch){
+    // Branch: show simple branch summary
+    el.innerHTML=`
+      <div class="fi"><div class="fi-l"><div class="fi-ico">📦</div><div><h4>شحنات الفرع</h4><span>${delivered} مكتملة من ${totalOrders}</span></div></div><div class="fi-a w">${totalOrders}</div></div>
+      <div class="fi"><div class="fi-l"><div class="fi-ico">💵</div><div><h4>إيرادات الفرع</h4><span>رسوم مكتملة</span></div></div><div class="fi-a pos">+${revenue.toLocaleString()} د.ل</div></div>
+      <div class="fi"><div class="fi-l"><div class="fi-ico">💳</div><div><h4>مستحقات التجار</h4><span>انتظار تحويل</span></div></div><div class="fi-a w">${merchantBal.toLocaleString()} د.ل</div></div>
+      <div class="fi"><div class="fi-l"><div class="fi-ico">🛵</div><div><h4>مناديب الفرع</h4><span>${agents.filter(a=>a.status!=='offline').length} نشط</span></div></div><div class="fi-a">${agents.length} مندوب</div></div>
+    `;
+  } else {
+    // Admin: show full company analytics
+    const now=new Date();
+    const today=orders.filter(o=>new Date(o.created_at).toDateString()===now.toDateString());
+    const week=orders.filter(o=>(now-new Date(o.created_at))<7*86400000);
+    const month=orders.filter(o=>(now-new Date(o.created_at))<30*86400000);
+    const todayRev=today.filter(o=>o.status==='delivered').reduce((s,o)=>s+(+o.fee||0),0);
+    const weekRev=week.filter(o=>o.status==='delivered').reduce((s,o)=>s+(+o.fee||0),0);
+    const monthRev=month.filter(o=>o.status==='delivered').reduce((s,o)=>s+(+o.fee||0),0);
+    el.innerHTML=`
+      <div class="fi"><div class="fi-l"><div class="fi-ico">📅</div><div><h4>إيرادات اليوم</h4><span>${today.length} شحنة</span></div></div><div class="fi-a pos">+${todayRev.toLocaleString()} د.ل</div></div>
+      <div class="fi"><div class="fi-l"><div class="fi-ico">📆</div><div><h4>إيرادات الأسبوع</h4><span>${week.length} شحنة</span></div></div><div class="fi-a pos">+${weekRev.toLocaleString()} د.ل</div></div>
+      <div class="fi"><div class="fi-l"><div class="fi-ico">🗓️</div><div><h4>إيرادات الشهر</h4><span>${month.length} شحنة</span></div></div><div class="fi-a pos">+${monthRev.toLocaleString()} د.ل</div></div>
+      <div class="fi"><div class="fi-l"><div class="fi-ico">💳</div><div><h4>مستحقات التجار</h4><span>جاهزة للتحويل</span></div></div><div class="fi-a w">${merchantBal.toLocaleString()} د.ل</div></div>
+      <div class="fi"><div class="fi-l"><div class="fi-ico">🛵</div><div><h4>رواتب المناديب</h4><span>هذا الشهر</span></div></div><div class="fi-a neg">-${agentPay.toLocaleString()} د.ل</div></div>
+      <div class="fi"><div class="fi-l"><div class="fi-ico">📊</div><div><h4>صافي الربح</h4><span>تقديري للشهر</span></div></div><div class="fi-a pos">+${Math.max(0,monthRev-agentPay).toLocaleString()} د.ل</div></div>
+    `;
+  }
 }
 
 // ════════════════════════════════════════
@@ -1876,8 +1942,11 @@ async function payAll(){
 //  FINANCE
 // ════════════════════════════════════════
 function renderFinancePage(){
-  const ms=CACHE.merchants, as=CACHE.agents;
-  const revenue=CACHE.orders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(+o.fee||0),0);
+  const isBranch=currentUser?.role==='branch', bid=currentUser?.branchId;
+  const ms=isBranch?CACHE.merchants.filter(m=>m.branch_id===bid):CACHE.merchants;
+  const as=isBranch?CACHE.agents.filter(a=>a.branch_id===bid):CACHE.agents;
+  const filteredOrders=isBranch?CACHE.orders.filter(o=>o.branch_id===bid):CACHE.orders;
+  const revenue=filteredOrders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(+o.fee||0),0);
   const merchantBal=ms.reduce((s,m)=>s+(+m.balance||0),0);
   const netProfit=Math.max(0,revenue-as.reduce((s,a)=>s+(+a.salary||800),0));
   const fStats=document.getElementById('fStats');
