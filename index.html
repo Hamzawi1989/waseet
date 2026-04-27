@@ -790,7 +790,7 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
     </div>
     <div class="fg2">
       <div class="fg"><label class="fl">الهاتف *</label><input class="fi2" id="mPhone" placeholder="+218 91 ..."></div>
-      <div class="fg"><label class="fl">المنطقة</label><select class="fi2" id="mArea"><option>طرابلس</option><option>جنزور</option><option>أبوسليم</option><option>تاجوراء</option><option>سوق الجمعة</option></select></div>
+      <div class="fg"><label class="fl">المنطقة</label><select class="fi2" id="mCity"><option value="">اختر المدينة...</option></select></div>
     </div>
     <div class="fg"><label class="fl">العنوان</label><input class="fi2" id="mAddr" placeholder="عنوان المتجر"></div>
     <div class="fg2">
@@ -2467,7 +2467,15 @@ function openModal(id){
     const fr=document.getElementById('feeRecipient');if(fr)fr.checked=true;
     calcTotal();
   }
-  if(id==='newMerchant'){ refreshCityDropdowns(); populateBranchSelects(); }
+  if(id==='newMerchant'){
+    // Populate cities from _cities (set by admin)
+    const mcSel=document.getElementById('mCity');
+    if(mcSel){
+      const cities=window._cities||[];
+      mcSel.innerHTML='<option value="">اختر المدينة...</option>'+cities.map(ct=>`<option value="${ct.name}">${ct.name}</option>`).join('');
+    }
+    populateBranchSelects();
+  }
   if(id==='newAgent'){
     // Populate branch cities (cities that have branches)
     const branchCities=[...new Set((window._branches||[]).filter(b=>b.status==='active').map(b=>b.city).filter(Boolean))];
