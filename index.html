@@ -281,7 +281,7 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
 <body>
 <!-- LOADING -->
 <div id="loadingScreen">
-  <div style="font-size:44px;animation:float 2s ease-in-out infinite">🚚</div>
+  <div style="font-size:44px;animation:floatK 2s ease-in-out infinite">🚚</div>
   <div class="loader-logo">WASEET</div>
   <div class="loader-bar"><div class="loader-fill"></div></div>
   <div class="loader-txt" id="loadTxt">جاري الاتصال بقاعدة البيانات...</div>
@@ -1100,31 +1100,53 @@ function showStatusMenu(id, event){
   menu.id='statusMenu';
   const btn=event.currentTarget;
   const rect=btn.getBoundingClientRect();
-  menu.style.cssText=`position:fixed;background:var(--bg2);border:1px solid var(--goldborder);border-radius:12px;padding:8px;z-index:5000;min-width:220px;box-shadow:0 20px 60px rgba(0,0,0,.8);top:${rect.bottom+6}px;right:${window.innerWidth-rect.right}px`;
+  // Smart positioning - don't go off screen
+  const topPos=rect.bottom+6;
+  const rightPos=window.innerWidth-rect.right;
+  menu.style.cssText=`position:fixed;background:var(--bg2);border:1px solid var(--goldborder);border-radius:14px;padding:8px;z-index:5000;min-width:240px;box-shadow:0 20px 60px rgba(0,0,0,.9),0 0 0 1px rgba(212,160,23,0.1);top:${Math.min(topPos,window.innerHeight-280)}px;right:${Math.max(8,rightPos)}px`;
   const s=o.status;
+  const st=getOrderStatus(s);
+  const branchName=(window._branches||[]).find(b=>b.id===o.branch_id)?.name||'—';
   let opts='';
+  
+  // Header
+  const header=`<div style="padding:8px 12px 10px;border-bottom:1px solid var(--border);margin-bottom:6px">
+    <div style="font-family:'Tajawal',sans-serif;font-weight:800;font-size:16px;color:var(--gold)">#${String(o.order_number||0).padStart(6,'0')}</div>
+    <div style="font-size:11px;color:var(--txt3);margin-top:2px">${st.icon} ${st.ar} · ${o.recipient||'—'}</div>
+    <div style="font-size:10px;color:var(--txt3);margin-top:1px">🏢 ${branchName}</div>
+  </div>`;
+  
   if(s==='waiting_approval'||s==='pending'){
-    opts+=mBtn('✅','قبول — انتظار التوصيل','#22c55e',`approveOrder('${id}')`);
+    opts+=mBtn('✅','قبول — إلى انتظار التوصيل','#22c55e',`approveOrder('${id}')`);
     opts+=mBtn('❌','رفض الشحنة','#ef4444',`rejectOrder('${id}')`);
   } else if(s==='waiting_delivery'){
-    opts+=mBtn('🛵','تعيين مندوب وإرسال','#d4a017',`showAgentSelect('${id}')`);
+    opts+=mBtn('🛵','تعيين مندوب وإرسال للتوصيل','#d4a017',`showAgentSelect('${id}')`);
   } else if(s==='in_delivery'||s==='transit'){
     opts+=mBtn('✅','تم التسليم للزبون','#22c55e',`markOrderDelivered('${id}')`);
-    opts+=mBtn('↩️','راجع — تسليم للفرع','#ef4444',`markOrderReturned('${id}')`);
+    opts+=mBtn('↩️','مرتجع — تسليم للفرع','#ef4444',`markOrderReturned('${id}')`);
   } else if(s==='returned'){
-    opts+=mBtn('📥','تم استلام المرتجع','#d4a017',`markReturnReceived('${id}')`);
-    opts+=mBtn('🔄','إعادة إرسال','#3b82f6',`reshipsOrder('${id}')`);
+    opts+=mBtn('📥','استلام المرتجع في الفرع','#d4a017',`markReturnReceived('${id}')`);
+    opts+=mBtn('🔄','إعادة إرسال للتوصيل','#3b82f6',`reshipsOrder('${id}')`);
   } else {
-    opts='<div style="padding:10px 12px;font-size:12px;color:var(--txt3)">لا يمكن تغيير هذه الحالة</div>';
+    opts='<div style="padding:10px 12px;font-size:12px;color:var(--txt3);text-align:center">✅ هذه الشحنة مكتملة</div>';
   }
-  menu.innerHTML=`<div style="padding:6px 10px 8px;font-size:10px;color:var(--txt3);border-bottom:1px solid var(--border);margin-bottom:4px">📦 #${String(o.order_number||0).padStart(6,'0')} — ${getOrderStatus(s).icon} ${getOrderStatus(s).ar}</div>${opts}`;
+  
+  menu.innerHTML=header+opts;
   document.body.appendChild(menu);
-  setTimeout(()=>document.addEventListener('click',function cl(e){if(!menu.contains(e.target)){menu.remove();document.removeEventListener('click',cl);}}),100);
+  setTimeout(()=>{
+    document.addEventListener('click',function cl(e){
+      if(!menu.contains(e.target)){menu.remove();document.removeEventListener('click',cl);}
+    });
+  },100);
 }
 
 function mBtn(icon,label,color,action){
-  return `<div onclick="${action};document.getElementById('statusMenu')?.remove()" style="display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:${color}" onmouseover="this.style.background='rgba(255,255,255,.06)'" onmouseout="this.style.background=''">${icon} ${label}</div>`;
+  return `<div onclick="${action};document.getElementById('statusMenu')?.remove()" 
+    style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:${color};transition:background .15s" 
+    onmouseover="this.style.background='rgba(255,255,255,.07)'" 
+    onmouseout="this.style.background=''">${icon} ${label}</div>`;
 }
+
 
 async function approveOrder(id){
   await updateOrderStatus(id,'waiting_delivery','انتظار التوصيل');
@@ -1141,12 +1163,16 @@ async function rejectOrder(id){
 }
 
 function showAgentSelect(orderId){
-  const agents=CACHE.agents.filter(a=>a.status!=='offline');
+  const o=CACHE.orders.find(x=>x.id===orderId);
+  // Filter agents by branch - show branch agents first, then all
+  const branchAgents=CACHE.agents.filter(a=>a.status!=='offline'&&a.branch_id===o?.branch_id);
+  const otherAgents=CACHE.agents.filter(a=>a.status!=='offline'&&a.branch_id!==o?.branch_id);
+  const agents=[...branchAgents,...otherAgents];
   const o=CACHE.orders.find(x=>x.id===orderId);
   document.getElementById('agentSelectDlg')?.remove();
   const div=document.createElement('div');
   div.id='agentSelectDlg'; div.className='ov show';
-  div.innerHTML=`<div class="modal" style="width:440px"><button class="mc" onclick="document.getElementById('agentSelectDlg').remove()">✕</button><h2>🛵 اختر مندوب التوصيل</h2><div style="background:var(--goldbg);border:1px solid var(--goldborder);border-radius:9px;padding:10px;margin-bottom:14px;font-size:12px;color:var(--txt2)">📦 #${String(o?.order_number||0).padStart(6,'0')} — ${o?.recipient||''}</div><div class="fg"><label class="fl">المندوب *</label><select class="fi2" id="agentSelectVal"><option value="">اختر المندوب...</option>${agents.map(a=>`<option value="${a.id}" data-phone="${a.phone||''}">${a.name} — ${a.area||''} — ${a.status==='online'?'🟢 نشط':'🟡 مشغول'}</option>`).join('')}</select></div><div class="mac"><button class="bp" onclick="confirmAgentAssign('${orderId}')">✅ تعيين وإرسال</button><button class="bs" onclick="document.getElementById('agentSelectDlg').remove()">إلغاء</button></div></div>`;
+  div.innerHTML=`<div class="modal" style="width:440px"><button class="mc" onclick="document.getElementById('agentSelectDlg').remove()">✕</button><h2>🛵 اختر مندوب التوصيل</h2><div style="background:var(--goldbg);border:1px solid var(--goldborder);border-radius:9px;padding:10px;margin-bottom:14px;font-size:12px;color:var(--txt2)">📦 #${String(o?.order_number||0).padStart(6,'0')} — ${o?.recipient||''}</div><div class="fg"><label class="fl">المندوب *</label><select class="fi2" id="agentSelectVal"><option value="">اختر المندوب...</option>${branchAgents.map(a=>`<option value="${a.id}" data-phone="${a.phone||''}">🏢 ${a.name} — ${a.area||''} — ${a.status==='online'?'🟢 نشط':'🟡 مشغول'}</option>`).join('')}${otherAgents.length&&branchAgents.length?'<option disabled>── مناديب فروع أخرى ──</option>':''}${otherAgents.map(a=>`<option value="${a.id}" data-phone="${a.phone||''}">${a.name} — ${a.area||''} — ${a.status==='online'?'🟢 نشط':'🟡 مشغول'}</option>`).join('')}</select></div><div class="mac"><button class="bp" onclick="confirmAgentAssign('${orderId}')">✅ تعيين وإرسال</button><button class="bs" onclick="document.getElementById('agentSelectDlg').remove()">إلغاء</button></div></div>`;
   document.body.appendChild(div);
   div.addEventListener('click',e=>{if(e.target===div)div.remove();});
 }
@@ -2005,6 +2031,14 @@ window.addEventListener('DOMContentLoaded',async()=>{
   if(cs){cs.style.display='flex';cs.style.alignItems='center';cs.style.justifyContent='center';}
   if(url){const el=document.getElementById('cfgUrl');if(el)el.value=url;}
   if(key){const el=document.getElementById('cfgKey');if(el)el.value=key;}
+  
+  // Safety: if stuck loading after 10s, show retry
+  setTimeout(()=>{
+    const ls=document.getElementById('loadingScreen');
+    if(ls && ls.style.display!=='none'){
+      ls.innerHTML+='<button onclick="location.reload()" style="background:var(--gold);color:#000;border:none;padding:10px 24px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Cairo,sans-serif;margin-top:8px">🔄 إعادة المحاولة</button>';
+    }
+  }, 10000);
 });
 
 </script>
