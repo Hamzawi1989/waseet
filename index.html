@@ -591,66 +591,78 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
 
 <!-- ══ SETTINGS ══ -->
 <div id="page-settings" class="page">
-  <div class="g22">
-    <div class="pn"><div class="ph"><h3>⚙️ إعدادات النظام</h3></div>
-      <div style="padding:20px">
-        <div class="fg"><label class="fl">اسم الشركة</label><input class="fi2" id="sName" value="WASEET - وسيط للتوصيل"></div>
-        <div class="fg"><label class="fl">رقم الاتصال</label><input class="fi2" id="sPhone" value="+218 91 000 0000"></div>
-        <div class="fg"><label class="fl">البريد الإلكتروني</label><input class="fi2" id="sEmail" value="admin@waseet.ly"></div>
-        <div class="fg"><label class="fl">العنوان</label><input class="fi2" id="sAddr" value="طرابلس، ليبيا"></div>
-        <div class="fg2">
-          <div class="fg"><label class="fl">رسوم التوصيل الافتراضية (د.ل)</label><input class="fi2" id="sFee" value="25" type="number"></div>
-          <div class="fg"><label class="fl">العملة</label><select class="fi2"><option>دينار ليبي (د.ل)</option><option>دولار ($)</option></select></div>
+  <!-- Admin Settings -->
+  <div id="adminSettingsView">
+    <div class="g22">
+      <div class="pn"><div class="ph"><h3>⚙️ إعدادات النظام</h3></div>
+        <div style="padding:20px">
+          <div class="fg"><label class="fl">اسم الشركة</label><input class="fi2" id="sName" value="WASEET - وسيط للتوصيل"></div>
+          <div class="fg"><label class="fl">رقم الاتصال</label><input class="fi2" id="sPhone" value="+218 91 000 0000"></div>
+          <div class="fg"><label class="fl">البريد الإلكتروني</label><input class="fi2" id="sEmail" value="admin@waseet.ly"></div>
+          <div class="fg"><label class="fl">العنوان</label><input class="fi2" id="sAddr" value="طرابلس، ليبيا"></div>
+          <div class="fg2">
+            <div class="fg"><label class="fl">رسوم التوصيل الافتراضية (د.ل)</label><input class="fi2" id="sFee" value="25" type="number"></div>
+            <div class="fg"><label class="fl">العملة</label><select class="fi2"><option selected>دينار ليبي (د.ل)</option></select></div>
+          </div>
+          <button class="bp" onclick="saveSettings()" style="width:100%;margin-top:4px">💾 حفظ</button>
         </div>
-        <button class="bp" onclick="toast('✅ تم حفظ الإعدادات!')">💾 حفظ</button>
       </div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:14px">
-      <div class="pn"><div class="ph"><h3>🔐 تغيير كلمة المرور</h3></div>
-        <div style="padding:18px">
+      <div class="pn"><div class="ph"><h3>🔑 تغيير كلمة المرور</h3></div>
+        <div style="padding:20px">
           <div class="fg"><label class="fl">كلمة المرور الحالية</label><input class="fi2" type="password" placeholder="••••••••"></div>
           <div class="fg"><label class="fl">كلمة المرور الجديدة</label><input class="fi2" id="np" type="password" placeholder="••••••••"></div>
           <div class="fg"><label class="fl">تأكيد</label><input class="fi2" id="cp" type="password" placeholder="••••••••"></div>
-          <button class="bp" onclick="chgPass()">🔐 تحديث</button>
+          <button class="bp" onclick="chgPass()" style="width:100%">🔐 تحديث</button>
         </div>
       </div>
-      <div class="pn" id="dbSettingsSection"><div class="ph"><h3>🔗 إعادة ربط قاعدة البيانات</h3></div>
-        <div style="padding:18px">
-          <div class="fg"><label class="fl">Supabase URL</label><input class="fi2" id="cfgUrl2" placeholder="https://xxx.supabase.co" style="direction:ltr;text-align:left;font-size:11px"></div>
-          <div class="fg"><label class="fl">Anon Key</label><input class="fi2" id="cfgKey2" placeholder="eyJ..." style="direction:ltr;text-align:left;font-size:10px"></div>
-          <div id="connStatus" style="font-size:11px;padding:8px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);margin-bottom:8px;color:var(--txt3)">🔌 اضغط "إعادة الاتصال" للتحقق</div>
-          <button class="bp" onclick="reConnect()">🔗 إعادة الاتصال</button>
+    </div>
+    <div class="pn" id="dbSettingsSection"><div class="ph"><h3>🔗 إعادة ربط قاعدة البيانات</h3></div>
+      <div style="padding:18px">
+        <div class="fg"><label class="fl">SUPABASE URL</label><input class="fi2" id="cfgUrl2" placeholder="https://xxx.supabase.co" style="direction:ltr;text-align:left;font-size:11px"></div>
+        <div class="fg"><label class="fl">ANON KEY</label><input class="fi2" id="cfgKey2" placeholder="eyJ..." style="direction:ltr;text-align:left;font-size:10px"></div>
+        <div id="connStatus" style="font-size:11px;padding:8px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);margin-bottom:8px;color:var(--txt3)">🔌 اضغط "إعادة الاتصال" للتحقق</div>
+        <button class="bp" onclick="reConnect()">🔗 إعادة الاتصال</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Branch Settings View -->
+  <div id="branchSettingsView" style="display:none">
+    <div class="pn">
+      <div class="ph"><h3>🏢 معلومات الفرع</h3></div>
+      <div style="padding:20px">
+        <!-- Branch Info (read-only) -->
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+          <div style="font-size:10px;color:var(--gold);font-weight:700;margin-bottom:12px">🏢 بيانات الفرع (للعرض فقط)</div>
+          <div class="odr"><span class="odl">اسم الفرع</span><span id="bsName" class="odv" style="font-weight:700;color:var(--gold)">—</span></div>
+          <div class="odr" style="border:none"><span class="odl">المدينة</span><span id="bsCity" class="odv">—</span></div>
+        </div>
+        <!-- Manager Info (read-only) -->
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+          <div style="font-size:10px;color:var(--gold);font-weight:700;margin-bottom:12px">👤 بيانات مدير الفرع</div>
+          <div class="odr"><span class="odl">الاسم</span><span id="bsMgrName" class="odv">—</span></div>
+          <div class="odr"><span class="odl">الهاتف</span><span id="bsMgrPhone" class="odv">—</span></div>
+          <div class="odr" style="border:none"><span class="odl">البريد الإلكتروني</span><span id="bsEmail" class="odv" style="font-size:11px;direction:ltr;text-align:right">—</span></div>
+        </div>
+        <!-- Currency (read-only) -->
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px">
+          <div style="font-size:10px;color:var(--gold);font-weight:700;margin-bottom:10px">💰 العملة</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0">
+            <span style="font-size:20px">🇱🇾</span>
+            <div>
+              <div style="font-weight:700;font-size:14px">دينار ليبي</div>
+              <div style="font-size:11px;color:var(--txt3)">LYD · د.ل</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
-
-
-<!-- ══ CHAT ══ -->
-<div id="page-chat" class="page">
-  <div class="pn" style="height:calc(100vh - 160px);display:flex;flex-direction:column">
-    <div class="ph">
-      <h3>💬 التواصل بين الفروع</h3>
-      <span id="chatOnlineCount" style="font-size:11px;color:var(--txt3)">الفروع النشطة</span>
-    </div>
-    <!-- Branch Directory -->
-    <div id="branchDirectory" style="background:var(--bg3);border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid var(--border)">
-      <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px">📋 دليل الفروع</div>
-      <div id="branchDirList" style="display:flex;flex-wrap:wrap;gap:8px"></div>
-    </div>
-    <!-- Messages Area -->
-    <div id="chatMessages" style="flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:8px;min-height:200px"></div>
-    <!-- Input Area -->
-    <div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border);margin-top:8px">
-      <input id="chatInput" class="fi2" placeholder="اكتب رسالتك للفروع..." style="flex:1;margin-bottom:0"
-        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMsg();}">
-      <button onclick="sendChatMsg()" style="background:linear-gradient(135deg,var(--gold3),var(--gold));color:var(--bg);border:none;padding:10px 16px;border-radius:10px;font-family:Cairo,sans-serif;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap">إرسال ➤</button>
-    </div>
-  </div>
-</div>
+```
 
 <!-- ══ NOTIFICATIONS ══ -->
+
+```
 <div id="page-notifications" class="page">
   <div class="pn">
     <div class="ph"><h3>🔔 الإشعارات</h3>
@@ -2851,12 +2863,30 @@ function onPageOpen(pid){
     renderReportsPage();
   }
   if(pid==='settings'){
-    // Hide DB settings from branch users - admin only
-    const dbSection=document.getElementById('dbSettingsSection');
-    if(dbSection){
-      dbSection.style.display = currentUser?.role==='admin' ? 'block' : 'none';
-    }
-    if(currentUser?.role==='admin'){
+    const isBranch = currentUser?.role === 'branch';
+    
+    // Show correct view
+    const adminView = document.getElementById('adminSettingsView');
+    const branchView = document.getElementById('branchSettingsView');
+    if(adminView) adminView.style.display = isBranch ? 'none' : 'block';
+    if(branchView) branchView.style.display = isBranch ? 'block' : 'none';
+    
+    if(isBranch){
+      // Fill branch info from branches cache
+      const bid = currentUser.branchId;
+      const b = (window._branches||[]).find(x=>x.id===bid);
+      const bsName = document.getElementById('bsName');
+      const bsCity = document.getElementById('bsCity');
+      const bsMgrName = document.getElementById('bsMgrName');
+      const bsMgrPhone = document.getElementById('bsMgrPhone');
+      const bsEmail = document.getElementById('bsEmail');
+      if(bsName) bsName.textContent = b?.name || currentUser.branchName || '—';
+      if(bsCity) bsCity.textContent = b?.city || '—';
+      if(bsMgrName) bsMgrName.textContent = b?.manager_name || '—';
+      if(bsMgrPhone) bsMgrPhone.textContent = b?.phone || '—';
+      if(bsEmail) bsEmail.textContent = b?.email || currentUser.email || '—';
+    } else {
+      // Admin: fill DB settings
       const su=localStorage.getItem('wb_url')||'';
       const sk=localStorage.getItem('wb_key')||'';
       const u=document.getElementById('cfgUrl2');
