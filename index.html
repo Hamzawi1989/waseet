@@ -1070,12 +1070,12 @@ async function doLogin(){
           return;
         }
         currentUser = { 
-          role:'branch', 
-          branchId: branch.id, 
-          branchName: branch.name,
-          email: branch.email,
-          name: 'مدير '+branch.name,
-          city: branch.city
+          role:'branch',
+          branchId: String(branch.id||''),
+          branchName: String(branch.name||''),
+          email: String(branch.email||''),
+          name: 'مدير '+String(branch.name||''),
+          city: String(branch.city||'')
         };
         saveSession(currentUser);
         await enterApp();
