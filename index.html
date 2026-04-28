@@ -1144,10 +1144,22 @@ function applyUserRole(){
   
   if(currentUser.role==='branch'){
     // ── Hide pages not relevant to branch ──
+    // Hide ALL restricted pages from sidebar
     const hidePages=['branches','reports','finance'];
     hidePages.forEach(pg=>{
+      // Hide nav item
       const el=document.querySelector('[data-page="'+pg+'"]');
-      if(el) el.style.display='none';
+      if(el){ el.style.display='none'; el.onclick=null; }
+      // Also hide the actual page div
+      const pageEl=document.getElementById('page-'+pg);
+      if(pageEl) pageEl.style.display='none';
+    });
+    // Remove branch-related quick action buttons
+    document.querySelectorAll('.qa').forEach(btn=>{
+      const txt=btn.textContent||'';
+      if(txt.includes('فرع جديد')||txt.includes('تسوية مالية')){
+        btn.style.display='none';
+      }
     });
     
     // ── Hide nav labels if all items hidden ──
@@ -2279,6 +2291,7 @@ function renderBranchesPage(){
 }
 
 async function submitBranch(){
+  if(currentUser?.role!=='admin'){ toast('🚫 المدير العام فقط يمكنه إنشاء فروع','err'); return; }
   const name=document.getElementById('brName')?.value.trim();
   const city=document.getElementById('brCity')?.value;
   const addr=document.getElementById('brAddr')?.value.trim();
@@ -2784,9 +2797,17 @@ const pgTitles={dashboard:'لوحة التحكم',chat:'التواصل بين ا
 
 function nav(el){
   if(!el) return;
+  const pid = el.dataset.page;
+  
+  // ── SECURITY: Block branch from restricted pages ──
+  const branchBlocked = ['branches','reports','finance'];
+  if(currentUser?.role==='branch' && branchBlocked.includes(pid)){
+    toast('🚫 هذه الصفحة للمدير العام فقط','err');
+    return;
+  }
+  
   document.querySelectorAll('.ni').forEach(i=>i.classList.remove('active'));
   el.classList.add('active');
-  const pid=el.dataset.page;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+pid)?.classList.add('active');
   document.getElementById('pgTitle').textContent=pgTitles[pid]||pid;
@@ -2802,7 +2823,10 @@ function onPageOpen(pid){
   }
   if(pid==='merchants') renderMerchantsPage();
   if(pid==='agents') renderAgentsPage();
-  if(pid==='finance') renderFinancePage();
+  if(pid==='finance'){
+    if(currentUser?.role!=='admin'){ toast('🚫 المدير العام فقط','err'); return; }
+    renderFinancePage();
+  }
   if(pid==='pricing'){
     _pricingFilter='';
     if(currentUser?.role==='branch'){
@@ -2822,7 +2846,10 @@ function onPageOpen(pid){
     renderBranchDirectory();
     initChat();
   }
-  if(pid==='reports') renderReportsPage();
+  if(pid==='reports'){
+    if(currentUser?.role!=='admin'){ toast('🚫 المدير العام فقط','err'); return; }
+    renderReportsPage();
+  }
   if(pid==='settings'){
     // Hide DB settings from branch users - admin only
     const dbSection=document.getElementById('dbSettingsSection');
@@ -2847,7 +2874,10 @@ function onPageOpen(pid){
       }
     }
   }
-  if(pid==='branches') renderBranchesPage();
+  if(pid==='branches'){
+    if(currentUser?.role!=='admin'){ toast('🚫 المدير العام فقط','err'); return; }
+    renderBranchesPage();
+  }
   if(pid==='scan') renderScanHistory();
 }
 
@@ -2865,6 +2895,12 @@ function toggleSidebar(){
 //  MODALS
 // ════════════════════════════════════════
 function openModal(id){
+  // Security: block branch from admin-only modals
+  const adminOnlyModals = ['newBranch'];
+  if(adminOnlyModals.includes(id) && currentUser?.role!=='admin'){
+    toast('🚫 المدير العام فقط','err');
+    return;
+  }
   if(id==='newOrder'){
     loadOrderNum();
     populateBranchSelects();
