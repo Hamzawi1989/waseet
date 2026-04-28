@@ -1033,67 +1033,63 @@ let currentUser = null;
 const ADMIN_EMAIL = 'admin@waseet.ly';
 const ADMIN_PASS  = 'waseet2024admin';
 
-async function doLogin(){
-  console.log('doLogin START');
-  const emailEl = document.getElementById('loginEmail');
-  const passEl  = document.getElementById('loginPass');
-  const email = emailEl ? emailEl.value.trim().toLowerCase() : '';
-  const pass  = passEl  ? passEl.value.trim() : '';
-  console.log('email:', email, 'pass length:', pass.length);
+function doLogin(){
+  console.log('doLogin v2 START');
+  var emailEl = document.getElementById('loginEmail');
+  var passEl  = document.getElementById('loginPass');
+  var email = emailEl ? emailEl.value.trim().toLowerCase() : '';
+  var pass  = passEl  ? passEl.value.trim() : '';
+  console.log('creds:', email, pass.length);
   
   if(!email || !pass){
     showLoginError('أدخل البريد الإلكتروني وكلمة المرور');
     return;
   }
   
-  const btn = document.getElementById('loginBtn');
-  if(btn){ btn.textContent = 'جاري...'; btn.disabled = true; }
+  var btn = document.getElementById('loginBtn');
+  if(btn){ btn.textContent='جاري...'; btn.disabled=true; }
   
-  // Admin check - instant, no network
-  console.log('checking admin:', email === 'admin@waseet.ly');
+  // Admin - instant
   if(email === 'admin@waseet.ly' && pass === 'waseet2024admin'){
-    console.log('ADMIN LOGIN OK');
-    currentUser = {role:'admin', name:'المدير العام', email:'admin@waseet.ly', branchId:null, branchName:''};
-    try{ saveSession(currentUser); console.log('session saved'); }catch(e){ console.error('saveSession error:',e); }
-    try{ enterApp(); console.log('enterApp called'); }catch(e){ console.error('enterApp error:',e); }
+    console.log('ADMIN OK');
+    currentUser = {role:'admin',name:'المدير العام',email:'admin@waseet.ly',branchId:null,branchName:''};
+    try{ localStorage.setItem('wb_user', JSON.stringify({role:'admin',name:'المدير العام',email:'admin@waseet.ly',branchId:null,branchName:''})); }catch(e){}
+    enterApp();
     return;
   }
   
-  // Branch check
-  console.log('checking branch...');
-  try {
-    if(!SB){ console.log('init SB'); initSB(_SB_URL, _SB_KEY); }
-    console.log('SB ready, querying branches...');
-    const res = await SB.from('branches').select('id,name,email,password_hash,city,status');
-    console.log('branches result:', res.data ? res.data.length : 'null', 'error:', res.error);
-    const branches = res.data || [];
-    const branch = branches.find(function(b){
-      return (b.email||'').toLowerCase().trim() === email && b.password_hash === pass;
-    });
-    if(branch){
-      if(branch.status !== 'active'){
-        showLoginError('هذا الفرع موقوف');
-        if(btn){btn.textContent='🔐 تسجيل الدخول';btn.disabled=false;}
-        return;
+  // Branch - async via .then()
+  if(!SB){ initSB(_SB_URL, _SB_KEY); }
+  console.log('querying branches...');
+  SB.from('branches').select('id,name,email,password_hash,city,status')
+    .then(function(res){
+      console.log('branches:', res.data ? res.data.length : 0, 'err:', res.error);
+      var branches = res.data || [];
+      var branch = null;
+      for(var i=0; i<branches.length; i++){
+        if((branches[i].email||'').toLowerCase().trim()===email && branches[i].password_hash===pass){
+          branch = branches[i]; break;
+        }
       }
-      currentUser = {
-        role:'branch',
-        branchId: String(branch.id||''),
-        branchName: String(branch.name||''),
-        email: String(branch.email||''),
-        name: 'مدير ' + String(branch.name||''),
-        city: String(branch.city||'')
-      };
-      try{ saveSession(currentUser); }catch(e){ console.error('saveSession error:',e); }
-      try{ enterApp(); }catch(e){ console.error('enterApp error:',e); }
-      return;
-    }
-    showLoginError('البريد أو كلمة المرور غير صحيحة');
-  } catch(e) {
-    console.error('doLogin catch:', e);
-    showLoginError('خطأ: ' + (e.message||String(e)));
-  }
-  if(btn){btn.textContent='🔐 تسجيل الدخول';btn.disabled=false;}
+      if(branch){
+        if(branch.status !== 'active'){
+          showLoginError('هذا الفرع موقوف');
+          if(btn){btn.textContent='🔐 تسجيل الدخول';btn.disabled=false;}
+          return;
+        }
+        currentUser = {role:'branch',branchId:String(branch.id||''),branchName:String(branch.name||''),email:String(branch.email||''),name:'مدير '+String(branch.name||''),city:String(branch.city||'')};
+        try{ localStorage.setItem('wb_user', JSON.stringify(currentUser)); }catch(e){}
+        enterApp();
+      } else {
+        showLoginError('البريد أو كلمة المرور غير صحيحة');
+        if(btn){btn.textContent='🔐 تسجيل الدخول';btn.disabled=false;}
+      }
+    })
+    .catch(function(e){
+      console.error('branch query error:', e);
+      showLoginError('خطأ في الاتصال: '+(e.message||String(e)));
+      if(btn){btn.textContent='🔐 تسجيل الدخول';btn.disabled=false;}
+    });
 }
 
 function showLoginError(msg){
