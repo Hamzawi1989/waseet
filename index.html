@@ -1600,7 +1600,7 @@ function showAgentSelect(orderId){
         <div style="font-weight:700;font-size:13px">📦 #${String(o.order_number||0).padStart(6,'0')} — ${o.recipient||''}</div>
         <div style="font-size:11px;color:var(--txt3);margin-top:3px">🏢 ${branchName||'—'} · 📍 ${o.area||''}</div>
       </div>
-      ${branchAgents.length===0&&!showAll?`<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:9px;padding:10px;margin-bottom:12px;font-size:12px;color:var(--err)">⚠️ لا يوجد مناديب مسجلون في هذا الفرع — أضف مندوباً أولاً</div>`:''}
+      ${branchAgents.length===0&&!showAll?'<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:9px;padding:10px;margin-bottom:12px;font-size:12px;color:var(--err)">⚠️ لا يوجد مناديب مسجلون في هذا الفرع — أضف مندوباً أولاً</div>':''}
       <div class="fg">
         <label class="fl">المندوب${branchName?' من فرع '+branchName:''} *</label>
         <select class="fi2" id="agentSelectVal">${agentsHtml}</select>
@@ -1860,7 +1860,7 @@ function loadOrders(){
   const el=document.getElementById('ordersT');
   if(!el) return;
   if(!rows.length){el.innerHTML='<div class="empty"><div>📭</div><p>لا توجد نتائج</p></div>';return;}
-  el.innerHTML=rows.map(o=>{const b=sb(o.status);return`<div class="tbl-row" style="grid-template-columns:85px 1fr 90px 95px 75px 105px"><span class="oid">#${String(o.order_number||0).padStart(6,'0')}</span><div><div style="font-weight:600">${o.merchant_name||'—'}</div><div class="sub">${o.recipient||'—'} · ${o.area||'—'}</div></div><span style="font-size:12px">${o.area||'—'}</span><span class="badge ${b.c}">${b.t}</span><span class="amt">${o.amount||0} د.ل</span><div class="acts"><div class="act" onclick="viewOrder('${o.id}')">👁️</div><div class="act" onclick="showStatusMenu('${o.id}',event)" style="color:var(--gold)">🔄</div>${currentUser?.role!=='branch'||o.branch_id===currentUser?.branchId?`<div class="act r" onclick="deleteOrder('${o.id}')">🗑️</div>`:''}</div></div>`;}).join('');
+  el.innerHTML=rows.map(o=>{const b=sb(o.status);const cd=currentUser?.role!=='branch'||o.branch_id===currentUser?.branchId;return '<div class="tbl-row" style="grid-template-columns:85px 1fr 90px 95px 75px 105px"><span class="oid">#'+String(o.order_number||0).padStart(6,'0')+'</span><div><div style="font-weight:600">'+(o.merchant_name||'—')+'</div><div class="sub">'+(o.recipient||'—')+' · '+(o.area||'—')+'</div></div><span style="font-size:12px">'+(o.area||'—')+'</span><span class="badge '+b.c+'">'+b.t+'</span><span class="amt">'+(o.amount||0)+' د.ل</span><div class="acts"><div class="act" onclick="viewOrder(\''+o.id+'\')">👁️</div><div class="act" onclick="event.stopPropagation();showStatusMenu(\''+o.id+'\',event)" style="color:var(--gold)">🔄</div>'+(cd?'<div class="act r" onclick="deleteOrder(\''+o.id+'\')">🗑️</div>':'')+'</div></div>';}).join('');
 }
 
 function onSearch(){ loadOrders(); }
@@ -1868,12 +1868,47 @@ function onSearch(){ loadOrders(); }
 async function viewOrder(id){
   const o=CACHE.orders.find(x=>x.id===id);if(!o) return;
   const st=getOrderStatus(o.status);
-  document.getElementById('od-ttl').innerHTML=`📦 #${String(o.order_number||0).padStart(6,'0')}`;
-  const agHtml=o.agent_name?`<div class="odr"><span class="odl">المندوب</span><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-weight:600">${o.agent_name}</span>${o.agent_phone?`<a href="tel:${o.agent_phone}" style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldborder);padding:3px 9px;border-radius:7px;font-size:10px;text-decoration:none;font-weight:700">📞</a><a href="https://wa.me/${(o.agent_phone||'').replace(/\D/g,'')}" target="_blank" style="background:rgba(34,197,94,0.1);color:var(--ok);border:1px solid rgba(34,197,94,0.2);padding:3px 9px;border-radius:7px;font-size:10px;text-decoration:none;font-weight:700">💬</a><span onclick="navigator.clipboard.writeText('${o.agent_phone}');toast('✅ تم النسخ')" style="background:var(--bg3);color:var(--txt2);border:1px solid var(--border);padding:3px 9px;border-radius:7px;font-size:10px;cursor:pointer;font-weight:700">📋</span>`:''}</div></div>`:`<div class="odr"><span class="odl">المندوب</span><span class="odv" style="color:var(--txt3)">لم يُعين بعد</span></div>`;
-  document.getElementById('od-body').innerHTML=`<div style="background:var(--goldbg);border:1px solid var(--goldborder);border-radius:11px;padding:14px;margin-bottom:14px;text-align:center"><div style="font-family:'Tajawal',sans-serif;font-weight:800;font-size:28px;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">#${String(o.order_number||0).padStart(6,'0')}</div><div style="margin-top:6px"><span class="badge ${st.cls}">${st.icon} ${st.ar}</span></div></div><div class="odr"><span class="odl">التاجر</span><span class="odv">${o.merchant_name||'—'}</span></div><div class="odr"><span class="odl">المستلم</span><span class="odv">${o.recipient||'—'}</span></div><div class="odr"><span class="odl">الهاتف</span><span class="odv">${o.phone||'—'}</span></div><div class="odr"><span class="odl">المدينة/المنطقة</span><span class="odv">${o.city||''} ${o.area?'/ '+o.area:''}</span></div><div class="odr"><span class="odl">العنوان</span><span class="odv">${o.address||'—'}</span></div>${agHtml}${o.content?`<div class="odr"><span class="odl">المحتوى</span><span class="odv">${o.content}</span></div>`:''}<div class="odr"><span class="odl">سعر المنتج</span><span class="odv">${o.amount||0} د.ل</span></div><div class="odr"><span class="odl">رسوم التوصيل</span><span class="odv">${o.fee||0} د.ل — على حساب ${o.fee_on==='merchant'?'التاجر':'المستلم'}</span></div><div class="odr"><span class="odl">الإجمالي</span><span class="odv" style="color:var(--gold);font-weight:700">${(+o.amount||0)+(+o.fee||0)} د.ل</span></div>${o.options?`<div class="odr"><span class="odl">خيارات</span><span class="odv">${o.options}</span></div>`:''}<div class="odr" style="border:none"><span class="odl">التاريخ</span><span class="odv">${new Date(o.created_at).toLocaleDateString('ar-LY')}</span></div>`;
-  const canChange=!['delivered','return_received'].includes(o.status);
-  document.getElementById('od-acts').innerHTML=(canChange?'<button class="bp" onclick="showStatusMenu(\''+id+'\',event);closeModal(\'orderDetail\')">🔄 تغيير الحالة</button>':'')+' <button class="bs" onclick="closeModal(\'orderDetail\')">إغلاق</button>';
-  openModal('orderDetail');
+  const num=String(o.order_number||0).padStart(6,"0");
+  document.getElementById("od-ttl").textContent="📦 #"+num;
+  let agHtml="";
+  if(o.agent_name){
+    agHtml+='<div class="odr"><span class="odl">المندوب</span>';
+    agHtml+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+    agHtml+='<span style="font-weight:600">'+o.agent_name+'</span>';
+    if(o.agent_phone){
+      const ph=o.agent_phone;
+      agHtml+='<a href="tel:'+ph+'" style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldborder);padding:3px 9px;border-radius:7px;font-size:10px;text-decoration:none;font-weight:700">📞</a>';
+      agHtml+='<a href="https://wa.me/'+ph.replace(/\\D/g,"")+'" target="_blank" style="background:rgba(34,197,94,0.1);color:var(--ok);border:1px solid rgba(34,197,94,0.2);padding:3px 9px;border-radius:7px;font-size:10px;text-decoration:none;font-weight:700">💬</a>';
+    }
+    agHtml+='</div></div>';
+  } else {
+    agHtml='<div class="odr"><span class="odl">المندوب</span><span class="odv" style="color:var(--txt3)">لم يُعين بعد</span></div>';
+  }
+  const contentRow=o.content?'<div class="odr"><span class="odl">المحتوى</span><span class="odv">'+o.content+'</span></div>':""
+  const optRow=o.options?'<div class="odr"><span class="odl">خيارات</span><span class="odv">'+o.options+'</span></div>':""
+  let body='';
+  body+='<div style="background:var(--goldbg);border:1px solid var(--goldborder);border-radius:11px;padding:14px;margin-bottom:14px;text-align:center">';
+  body+='<div style="font-family:Tajawal,sans-serif;font-weight:800;font-size:28px;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">#'+num+'</div>';
+  body+='<div style="margin-top:6px"><span class="badge '+st.cls+'">'+st.icon+" "+st.ar+'</span></div></div>';
+  body+='<div class="odr"><span class="odl">التاجر</span><span class="odv">'+(o.merchant_name||"—")+'</span></div>';
+  body+='<div class="odr"><span class="odl">المستلم</span><span class="odv">'+(o.recipient||"—")+'</span></div>';
+  body+='<div class="odr"><span class="odl">الهاتف</span><span class="odv">'+(o.phone||"—")+'</span></div>';
+  body+='<div class="odr"><span class="odl">المدينة/المنطقة</span><span class="odv">'+(o.city||"")+' '+(o.area?"/ "+o.area:"")+'</span></div>';
+  body+='<div class="odr"><span class="odl">العنوان</span><span class="odv">'+(o.address||"—")+'</span></div>';
+  body+=agHtml;
+  body+=contentRow+optRow;
+  body+='<div class="odr"><span class="odl">سعر المنتج</span><span class="odv">'+(o.amount||0)+' د.ل</span></div>';
+  body+='<div class="odr"><span class="odl">رسوم التوصيل</span><span class="odv">'+(o.fee||0)+' د.ل</span></div>';
+  body+='<div class="odr"><span class="odl">الإجمالي</span><span class="odv" style="color:var(--gold);font-weight:700">'+((+o.amount||0)+(+o.fee||0))+' د.ل</span></div>';
+  body+='<div class="odr" style="border:none"><span class="odl">التاريخ</span><span class="odv">'+new Date(o.created_at).toLocaleDateString("ar-LY")+'</span></div>';
+  document.getElementById("od-body").innerHTML=body;
+  const canChange=!["delivered","return_received"].includes(o.status);
+  const actsEl=document.getElementById("od-acts");
+  actsEl.innerHTML="";
+  if(canChange){const b1=document.createElement("button");b1.className="bp";b1.textContent="🔄 تغيير الحالة";b1.onclick=function(){showStatusMenu(id,{currentTarget:b1,stopPropagation:function(){}});closeModal("orderDetail");};actsEl.appendChild(b1);}
+  const b2=document.createElement("button");b2.className="bs";b2.textContent="🖨️ طباعة الملصق";b2.onclick=function(){printShippingLabel(id);};actsEl.appendChild(b2);
+  const b3=document.createElement("button");b3.className="bs";b3.textContent="إغلاق";b3.onclick=function(){closeModal("orderDetail");};actsEl.appendChild(b3);
+  openModal("orderDetail");
 }
 
 async function deleteOrder(id){
@@ -2649,7 +2684,7 @@ function renderPricingPage(){
       header.textContent='🗺️ أسعار فرع '+currentUser.branchName;
     }
   }
-  el.innerHTML=areas.length?areas.map(p=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.03)"><div><div style="font-weight:600;font-size:12px">📍 ${p.area}</div>${p.city?`<div style="font-size:10px;color:var(--txt3)">🏙️ ${p.city}</div>`:''}</div><div style="display:flex;align-items:center;gap:7px"><input value="${p.price}" type="number" min="0" onchange="editAreaPrice('${p.id}',this.value)" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'" style="width:65px;text-align:center;background:var(--bg3);border:1px solid var(--border);color:var(--gold);padding:5px 6px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:12px;outline:none;transition:border-color .2s"><span style="font-size:11px;color:var(--txt3)">د.ل</span><div class="act r" onclick="deleteArea('${p.id}')">🗑️</div></div></div>`).join(''):`<div class="empty"><div>🗺️</div><p>${_currentPricingBranch?'لا توجد أسعار لهذا الفرع — اضغط "نسخ الأسعار العامة"':'لا توجد مناطق — أضف منطقة'}</p></div>`;
+  el.innerHTML=areas.length?areas.map(p=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.03)"><div><div style="font-weight:600;font-size:12px">📍 ${p.area}</div>${p.city?'<div style="font-size:10px;color:var(--txt3)">🏙️ '+p.city+'</div>':''}</div><div style="display:flex;align-items:center;gap:7px"><input value="${p.price}" type="number" min="0" onchange="editAreaPrice('${p.id}',this.value)" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'" style="width:65px;text-align:center;background:var(--bg3);border:1px solid var(--border);color:var(--gold);padding:5px 6px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:12px;outline:none;transition:border-color .2s"><span style="font-size:11px;color:var(--txt3)">د.ل</span><div class="act r" onclick="deleteArea('${p.id}')">🗑️</div></div></div>`).join(''):`<div class="empty"><div>🗺️</div><p>${_currentPricingBranch?'لا توجد أسعار لهذا الفرع — اضغط "نسخ الأسعار العامة"':'لا توجد مناطق — أضف منطقة'}</p></div>`;
   renderCitiesTable();
 }
 
@@ -2763,7 +2798,12 @@ function processScan(val){
 function renderScanHistory(){
   const el=document.getElementById('scanHistory');if(!el) return;
   if(!_scanLog.length){el.innerHTML='<div class="empty"><div>📷</div><p>لا توجد عمليات مسح</p></div>';return;}
-  el.innerHTML=_scanLog.slice(0,10).map(e=>`<div class="fi"><div class="fi-l"><div class="fi-ico">${e.found?'✅':'❌'}</div><div><h4>${e.found?`#${String(e.order?.order_number||0).padStart(6,'0')} — ${e.order?.recipient||'—'}`:`${e.val}`}</h4><span>${e.time.toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'})}</span></div></div>${e.found?`<button onclick="viewOrder('${e.order?.id}')" style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldborder);padding:4px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:600">عرض</button>`:''}</div>`).join('');
+  el.innerHTML=_scanLog.slice(0,10).map(e=>{
+    const numStr=e.found?('#'+String(e.order?.order_number||0).padStart(6,'0')+' — '+(e.order?.recipient||'—')):e.val;
+    const timeStr=e.time.toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
+    const viewBtn=e.found?('<button onclick="viewOrder(\''+e.order?.id+'\'" style="background:var(--goldbg);color:var(--gold);border:1px solid var(--goldborder);padding:4px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-family:Cairo,sans-serif;font-weight:600">عرض</button>'):'';
+    return '<div class="fi"><div class="fi-l"><div class="fi-ico">'+(e.found?'✅':'❌')+'</div><div><h4>'+numStr+'</h4><span>'+timeStr+'</span></div></div>'+viewBtn+'</div>';
+  }).join('');
 }
 
 // ════════════════════════════════════════
@@ -3301,7 +3341,7 @@ function renderChatMessages(){
         <div style="background:${isMe?'linear-gradient(135deg,var(--gold3),var(--gold))':'var(--bg3)'};color:${isMe?'var(--bg)':'var(--txt)'};padding:10px 14px;border-radius:${isMe?'14px 14px 4px 14px':'14px 14px 14px 4px'};max-width:75%;font-size:13px;line-height:1.5;border:1px solid ${isMe?'transparent':'var(--border)'}">
           ${m.message}
         </div>
-        ${m.sender_phone&&!isMe?`<div style="font-size:10px;color:var(--txt3)">📞 ${m.sender_phone}</div>`:''}
+        ${m.sender_phone&&!isMe?'<div style="font-size:10px;color:var(--txt3)">📞 '+m.sender_phone+'</div>':''}
       </div>
     `;
   }).join('');
@@ -3335,94 +3375,47 @@ function renderBranchDirectory(){
 // ════════════════════════════════════════
 
 function printShippingLabel(orderId){
-  const o = CACHE.orders.find(x=>x.id===orderId);
-  if(!o){ toast('❌ لم يتم العثور على الشحنة','err'); return; }
+  const o=CACHE.orders.find(x=>x.id===orderId);
+  if(!o) return;
+  const num=String(o.order_number||0).padStart(6,'0');
+  const m=CACHE.merchants.find(x=>x.id===o.merchant_id);
+  const parts=[
+    'WASEET - وسيط للتوصيل',
+    'شحنة رقم: '+num,
+    '---',
+    'المستلم: '+(o.recipient||''),
+    'هاتف: '+(o.phone||''),
+    (o.phone2?'هاتف2: '+o.phone2:''),
+    'المنطقة: '+(o.city||'')+' '+(o.area||''),
+    (o.address?'العنوان: '+o.address:''),
+    '---',
+    'المتجر: '+(m?m.name:o.merchant_name||''),
+    (m&&m.phone?'هاتف المتجر: '+m.phone:''),
+    '---',
+    'المبلغ: '+(+o.amount||0)+' د.ل',
+    (o.content?'المحتوى: '+o.content:''),
+    (o.options?'تعليمات: '+o.options:''),
+    '---',
+    'WST-'+num,
+    new Date().toLocaleDateString('ar-LY')
+  ].filter(Boolean).join('\n');
   
-  const merchant = CACHE.merchants.find(m=>m.id===o.merchant_id);
-  const orderNum = String(o.order_number||0).padStart(6,'0');
-  
-  // Build HTML parts using concatenation (no nested templates)
-  let recipientExtra = '';
-  if(o.phone2) recipientExtra += '<div class="sec-phone">📞 ' + o.phone2 + ' (احتياطي)</div>';
-  if(o.address) recipientExtra += '<div class="sec-sub">🏠 ' + o.address + '</div>';
-  
-  let merchantPhone = '';
-  if(merchant && merchant.phone) merchantPhone = '<div class="sec-phone">📞 ' + merchant.phone + '</div>';
-  
-  let contentHtml = '';
-  if(o.content) contentHtml = '<div class="sec"><div class="sec-title">📋 المحتوى</div><div class="sec-sub">' + o.content + (o.qty&&o.qty>1?' × '+o.qty:'') + '</div></div>';
-  
-  let optionsHtml = '';
-  if(o.options) optionsHtml = '<div class="sec"><div class="sec-title">⚠️ تعليمات</div><div class="sec-sub">' + o.options + '</div></div>';
-  
-  const merchantName = merchant ? merchant.name : (o.merchant_name||'—');
-  const today = new Date().toLocaleDateString('ar-LY');
-  
-  const html = '<!DOCTYPE html><html dir="rtl" lang="ar"><head>'
-    + '<meta charset="UTF-8">'
-    + '<meta name="viewport" content="width=device-width,initial-scale=1">'
-    + '<title>ملصق #' + orderNum + '</title>'
-    + '<link rel="preconnect" href="https://fonts.googleapis.com">'
-    + '<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800;900&display=swap" rel="stylesheet">'
-    + '<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><' + '/script>'
-    + '<style>'
-    + '*{margin:0;padding:0;box-sizing:border-box}'
-    + 'body{font-family:Cairo,Tahoma,sans-serif;background:#fff;direction:rtl}'
-    + '@media print{.no-print{display:none!important}.label{box-shadow:none!important;margin:0!important}}'
-    + '.label{width:100mm;min-height:150mm;border:2px solid #000;border-radius:6px;margin:8px auto;overflow:hidden;background:#fff;box-shadow:0 4px 20px rgba(0,0,0,.2)}'
-    + '.hdr{background:#000;color:#d4a017;padding:10px 12px;display:flex;align-items:center;justify-content:space-between}'
-    + '.hdr-logo{font-size:22px;font-weight:900;letter-spacing:2px}'
-    + '.hdr-ar{font-size:16px;font-weight:800;color:#f0c040}'
-    + '.order-num{background:#d4a017;color:#000;padding:8px 12px;text-align:center;font-size:18px;font-weight:900;border-bottom:2px solid #000}'
-    + '.sec{padding:8px 12px;border-bottom:1.5px solid #000}'
-    + '.sec-title{font-size:9px;font-weight:700;color:#666;margin-bottom:5px}'
-    + '.sec-main{font-size:14px;font-weight:800;margin-bottom:2px}'
-    + '.sec-sub{font-size:11px;color:#333}'
-    + '.sec-phone{font-size:13px;font-weight:700;direction:ltr;text-align:right}'
-    + '.code-sec{padding:10px;text-align:center;background:#f9f9f9}'
-    + '.barcode-num{font-size:13px;font-weight:700;letter-spacing:3px;margin-top:5px;font-family:monospace}'
-    + '.amount-box{background:#d4a017;color:#000;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #000}'
-    + '.ftr{background:#000;color:#d4a017;padding:6px 12px;font-size:9px;display:flex;justify-content:space-between}'
-    + '.print-btn{display:block;width:calc(100% - 20px);margin:10px auto;padding:12px;background:#000;color:#d4a017;border:none;border-radius:6px;font-family:Cairo,sans-serif;font-size:16px;font-weight:700;cursor:pointer}'
-    + '#qrcode img,#qrcode canvas{width:90px!important;height:90px!important}'
-    + '</style></head><body>'
+  const w=window.open('','_blank','width=400,height=600');
+  if(!w){toast('⚠️ السماح بالنوافذ المنبثقة','warn');return;}
+  w.document.write('<html dir="rtl"><head><meta charset="UTF-8"><title>ملصق '+num+'</title>'
+    +'<style>body{font-family:Tahoma,sans-serif;padding:20px;direction:rtl}'
+    +'pre{white-space:pre-wrap;font-size:14px;border:2px solid #000;padding:16px;border-radius:8px}'
+    +'button{display:block;width:100%;padding:12px;background:#000;color:#d4a017;border:none;font-size:16px;cursor:pointer;margin-top:12px;border-radius:6px}'
+    +'</style></head><body>'
 
 ```
-+ '<div class="label">'
-+ '<div class="hdr"><div><div class="hdr-logo">WASEET</div><div class="hdr-ar">وسيط للتوصيل</div></div>'
-+ '<div style="text-align:left"><div style="font-size:9px;color:#999">رقم الشحنة</div><div style="font-size:14px;font-weight:800;color:#f0c040">#' + orderNum + '</div></div></div>'
-+ '<div class="order-num">📦 #' + orderNum + '</div>'
-+ '<div class="sec"><div class="sec-title">📍 بيانات المستلم</div>'
-+ '<div class="sec-main">' + (o.recipient||'—') + '</div>'
-+ '<div class="sec-phone">📞 ' + (o.phone||'—') + '</div>'
-+ recipientExtra
-+ '<div class="sec-sub">📌 ' + (o.city||'') + (o.area?' - '+o.area:'') + '</div></div>'
-+ '<div class="sec"><div class="sec-title">🏪 بيانات المتجر</div>'
-+ '<div class="sec-main">' + merchantName + '</div>'
-+ merchantPhone + '</div>'
-+ '<div class="amount-box"><div style="font-size:10px;font-weight:700">💰 المبلغ عند التسليم</div>'
-+ '<div style="font-size:18px;font-weight:900">' + (+o.amount||0).toLocaleString() + ' د.ل</div></div>'
-+ '<div class="code-sec"><div id="qrcode"></div>'
-+ '<div class="barcode-num">WST-' + orderNum + '</div>'
-+ '<div style="font-size:9px;color:#666;margin-top:3px">امسح لعرض تفاصيل الشحنة</div></div>'
-+ contentHtml
-+ optionsHtml
-+ '<div class="ftr"><span>وسيط للتوصيل · WASEET</span><span>' + today + '</span></div>'
-+ '</div>'
-+ '<button class="print-btn no-print" onclick="window.print()">🖨️ طباعة الملصق</button>'
-+ '<sc'+'ript>'
-+ 'window.onload=function(){'
-+ 'new QRCode(document.getElementById("qrcode"),{text:"WST-' + orderNum + '",width:90,height:90,colorDark:"#000",colorLight:"#fff"});'
-+ 'setTimeout(function(){window.print();},1200);'
-+ '};'
-+ '</sc'+'ript>'
-+ '</body></html>';
++'<h2 style="text-align:center;color:#d4a017">🚚 WASEET</h2>'
++'<pre>'+parts+'</pre>'
++'<button onclick="window.print()">🖨️ طباعة</button>'
++'<sc'+'ript>setTimeout(function(){window.print()},500)<'+'/script>'
++'</body></html>');
 ```
 
-const w = window.open(’’,’_blank’,‘width=420,height=650’);
-if(!w){ toast(‘⚠️ السماح بالنوافذ المنبثقة لطباعة الملصق’,‘warn’); return; }
-w.document.open();
-w.document.write(html);
 w.document.close();
 }
 
