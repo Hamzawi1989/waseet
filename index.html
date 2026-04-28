@@ -832,9 +832,22 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
 </div>
 <div class="fg2">
   <div class="fg"><label class="fl">تخصص المتجر</label><input class="fi2" id="mSpec" placeholder="مثال: ملابس، إلكترونيات، مواد غذائية..."></div>
-  <div class="fg"><label class="fl">المدينة *</label><select class="fi2" id="mCity"><option value="">اختر المدينة...</option></select></div>
+  <div class="fg">
+    <label class="fl">المدينة *</label>
+    <select class="fi2" id="mCity" onchange="onMerchantCityChange()">
+      <option value="">اختر المدينة...</option>
+    </select>
+  </div>
 </div>
-<div class="fg"><label class="fl">عنوان المتجر</label><input class="fi2" id="mAddr" placeholder="العنوان التفصيلي"></div>
+<div class="fg2">
+  <div class="fg">
+    <label class="fl">الفرع * (يظهر بعد اختيار المدينة)</label>
+    <select class="fi2" id="mBranch" disabled style="opacity:0.6">
+      <option value="">اختر المدينة أولاً...</option>
+    </select>
+  </div>
+          <input class="fi2" id="mAddr" placeholder="العنوان التفصيلي"></div>
+</div>
 
 <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
   <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:10px">🔐 بيانات دخول التاجر</div>
@@ -2062,11 +2075,14 @@ async function submitMerchant(){
   const pass   = document.getElementById('mPass')?.value.trim();
   const pass2  = document.getElementById('mPass2')?.value.trim();
   if(!name||!owner||!phone){toast('⚠️ اسم المتجر والمالك والهاتف مطلوبة','warn');return;}
+  if(!city){toast('⚠️ اختر المدينة','warn');return;}
+  // Get branch from mBranch select (overrides previous logic)
+  const selectedBranch = document.getElementById('mBranch')?.value||'';
   if(!pass){toast('⚠️ أدخل كلمة المرور','warn');return;}
   if(pass!==pass2){toast('❌ كلمتا المرور غير متطابقتين','err');return;}
   if(pass.length<4){toast('⚠️ كلمة المرور 4 أحرف على الأقل','warn');return;}
 
-  const branchId = currentUser?.role==='branch' ? currentUser.branchId : (document.getElementById('mBranch')?.value||null);
+  const branchId = selectedBranch || (currentUser?.role==='branch' ? currentUser.branchId : null);
 
   const {data,error}=await SB.from('merchants').insert({
     name, owner, phone, phone2, 
@@ -2924,6 +2940,48 @@ function toggleSidebar(){
 // ════════════════════════════════════════
 //  MODALS
 // ════════════════════════════════════════
+
+function onMerchantCityChange(){
+  const city = document.getElementById('mCity')?.value||'';
+  const branchSel = document.getElementById('mBranch');
+  if(!branchSel) return;
+  
+  if(!city){
+    branchSel.innerHTML='<option value="">اختر المدينة أولاً...</option>';
+    branchSel.disabled = true;
+    branchSel.style.opacity = '0.6';
+    return;
+  }
+  
+  // Filter branches by selected city
+  const cityBranches = (window._branches||[]).filter(b => 
+    b.city === city && b.status === 'active'
+  );
+  
+  if(!cityBranches.length){
+    branchSel.innerHTML='<option value="">لا توجد فروع في هذه المدينة</option>';
+    branchSel.disabled = true;
+    branchSel.style.opacity = '0.6';
+  } else {
+    branchSel.innerHTML = '<option value="">اختر الفرع...</option>' +
+      cityBranches.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+    branchSel.disabled = false;
+    branchSel.style.opacity = '1';
+    // Auto-select if only one branch
+    if(cityBranches.length === 1){
+      branchSel.value = cityBranches[0].id;
+    }
+  }
+  
+  // If branch user - auto-select their branch
+  if(currentUser?.role === 'branch'){
+    const myBranch = (window._branches||[]).find(b=>b.id===currentUser.branchId);
+    if(myBranch?.city === city){
+      branchSel.value = currentUser.branchId;
+    }
+  }
+}
+
 function openModal(id){
   // Security: block branch from admin-only modals
   const adminOnlyModals = ['newBranch'];
@@ -2967,13 +3025,42 @@ function openModal(id){
     calcTotal();
   }
   if(id==='newMerchant'){
-    // Populate cities from _cities (set by admin)
+    // Show only cities that have active branches
     const mcSel=document.getElementById('mCity');
     if(mcSel){
-      const cities=window._cities||[];
-      mcSel.innerHTML='<option value="">اختر المدينة...</option>'+cities.map(ct=>`<option value="${ct.name}">${ct.name}</option>`).join('');
+      const branches = window._branches||[];
+      // Get unique cities from branches
+      const branchCities = [...new Set(branches.filter(b=>b.status==='active').map(b=>b.city).filter(Boolean))];
+      // Also include all cities but mark which have branches
+      const allCities = window._cities||[];
+      
+      if(branchCities.length > 0){
+        // Show cities with branches first
+        let opts = '<option value="">اختر المدينة...</option>';
+        // Cities with branches
+        branchCities.forEach(city=>{
+          opts += `<option value="${city}">🏢 ${city}</option>`;
+        });
+        // Other cities without branches
+        allCities.filter(ct=>!branchCities.includes(ct.name)).forEach(ct=>{
+          opts += `<option value="${ct.name}" style="color:var(--txt3)">${ct.name}</option>`;
+        });
+        mcSel.innerHTML = opts;
+      } else {
+        mcSel.innerHTML='<option value="">اختر المدينة...</option>'+allCities.map(ct=>`<option value="${ct.name}">${ct.name}</option>`).join('');
+      }
     }
-    populateBranchSelects();
+    // Reset branch select
+    const mb=document.getElementById('mBranch');
+    if(mb){ mb.innerHTML='<option value="">اختر المدينة أولاً...</option>'; mb.disabled=true; mb.style.opacity='0.6'; }
+    // If branch user - auto-set city and branch
+    if(currentUser?.role==='branch'){
+      const myBranch=(window._branches||[]).find(b=>b.id===currentUser.branchId);
+      if(myBranch && mcSel){
+        mcSel.value=myBranch.city;
+        onMerchantCityChange();
+      }
+    }
   }
   if(id==='newAgent'){
     // Populate branch cities (cities that have branches)
