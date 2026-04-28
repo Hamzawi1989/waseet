@@ -3216,38 +3216,49 @@ window.addEventListener('DOMContentLoaded',async()=>{
   window._cities=[];window._branches=[];
   document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');}));
   document.getElementById('cdlg')?.addEventListener('click',e=>{if(e.target===document.getElementById('cdlg'))closeCnf();});
-  if(window.innerWidth<=1200&&window.innerWidth>900) document.getElementById('sidebar').classList.add('collapsed');
+  if(window.innerWidth<=1200&&window.innerWidth>900){const sb=document.getElementById('sidebar');if(sb)sb.classList.add('collapsed');}
+  
+  // Init Supabase immediately - no waiting
   const {url,key}=getSavedConfig();
-  // Always init Supabase with hardcoded credentials
   initSB(url,key);
   
-  // Check saved session first (fast path - no network call needed)
-  const savedUser = loadSession();
+  // Hide loading immediately
+  const ldScr=document.getElementById('loadingScreen');
+  if(ldScr)ldScr.style.display='none';
+  
+  // Check saved session - go straight to app
+  const savedUser=loadSession();
   if(savedUser){
-    currentUser = savedUser;
-    await enterApp();
+    currentUser=savedUser;
+    // Show app immediately, load data in background
+    const ls=document.getElementById('loginScreen');if(ls)ls.style.display='none';
+    applyUserRole();
+    // Navigate to dashboard
+    const dashNav=document.querySelector('[data-page=dashboard]');
+    if(dashNav){
+      document.querySelectorAll('.ni').forEach(i=>i.classList.remove('active'));
+      dashNav.classList.add('active');
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      const dp=document.getElementById('page-dashboard');if(dp)dp.classList.add('active');
+      document.getElementById('pgTitle').textContent='لوحة التحكم';
+    }
+    // Add logout button
+    if(!document.getElementById('logoutBtn')){
+      const d=document.createElement('div');d.id='logoutBtn';
+      d.style.cssText='position:fixed;bottom:14px;left:10px;z-index:500';
+      d.innerHTML='<button onclick="doLogout()" style="background:rgba(239,68,68,0.12);color:var(--err);border:1px solid rgba(239,68,68,0.25);padding:8px 14px;border-radius:10px;font-family:Cairo,sans-serif;font-size:12px;font-weight:700;cursor:pointer">🚪 خروج</button>';
+      document.body.appendChild(d);
+    }
+    // Load data in background
+    refreshAll().catch(e=>console.error('refreshAll error:',e));
+    loadOrderNum();
+    startClock();
     return;
   }
   
-  // No session - test connection then show login
-  const ok = await testConn();
-  document.getElementById('loadingScreen').style.display='none';
-  if(ok){
-    const ls=document.getElementById('loginScreen');
-    if(ls){ls.style.display='flex';}
-  } else {
-    // Show config if can't connect
-    const cs=document.getElementById('configScreen');
-    if(cs){cs.style.display='flex';cs.style.alignItems='center';cs.style.justifyContent='center';}
-  }
-  
-  // Safety: if stuck loading after 10s, show retry
-  setTimeout(()=>{
-    const ls=document.getElementById('loadingScreen');
-    if(ls && ls.style.display!=='none'){
-      ls.innerHTML+='<button onclick="location.reload()" style="background:var(--gold);color:#000;border:none;padding:10px 24px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Cairo,sans-serif;margin-top:8px">🔄 إعادة المحاولة</button>';
-    }
-  }, 10000);
+  // No session - show login directly
+  const loginScr=document.getElementById('loginScreen');
+  if(loginScr)loginScr.style.display='flex';
 });
 
 
