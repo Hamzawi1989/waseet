@@ -3194,72 +3194,31 @@ function startClock(){
 // ════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════
-window.addEventListener('DOMContentLoaded',async()=>{
-  // Catch ALL errors
-  window.addEventListener('unhandledrejection',function(e){
-    console.error('Unhandled promise rejection:',e.reason);
-    const ld=document.getElementById('loadingScreen');
-    if(ld&&ld.style.display!=='none'){
-      ld.innerHTML='<div style="color:#ef4444;font-size:13px;padding:20px;text-align:center;max-width:300px">❌ خطأ: '+(e.reason&&e.reason.message||String(e.reason))+'<br><br><button onclick="location.reload()" style="background:#d4a017;color:#000;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;font-family:Cairo,sans-serif">🔄 إعادة المحاولة</button></div>';
-    }
-  });
-  // Global error handler
-  window.onerror = function(msg, src, line, col, err){
-    console.error('JS Error:', msg, 'Line:', line);
-    const ld = document.getElementById('loadingScreen');
-    if(ld && ld.style.display !== 'none'){
-      ld.innerHTML = '<div style="color:#ef4444;font-size:14px;padding:20px;text-align:center">'
-        + '❌ خطأ في التطبيق<br><small style="color:#999">'+msg+'</small>'
-        + '<br><br><button onclick="location.reload()" style="background:#d4a017;color:#000;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;font-family:Cairo,sans-serif">🔄 إعادة المحاولة</button>'
-        + '</div>';
-    }
-    return false;
-  };
+window.addEventListener('DOMContentLoaded', function(){
   window._cities=[];window._branches=[];
-  document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');}));
-  document.getElementById('cdlg')?.addEventListener('click',e=>{if(e.target===document.getElementById('cdlg'))closeCnf();});
-  if(window.innerWidth<=1200&&window.innerWidth>900){const sb=document.getElementById('sidebar');if(sb)sb.classList.add('collapsed');}
+  
+  document.querySelectorAll('.ov').forEach(function(o){
+    o.addEventListener('click',function(e){if(e.target===o)o.classList.remove('show');});
+  });
+  const cdlg=document.getElementById('cdlg');
+  if(cdlg)cdlg.addEventListener('click',function(e){if(e.target===cdlg)closeCnf();});
   
   // Init Supabase immediately
   initSB(_SB_URL, _SB_KEY);
   
-  // Hide loading immediately
-  const ldScr=document.getElementById('loadingScreen');
-  if(ldScr)ldScr.style.display='none';
-  
-  // Check saved session - go straight to app
-  const savedUser=loadSession();
+  // Check saved session - enter app directly
+  const savedUser = loadSession();
   if(savedUser){
-    currentUser=savedUser;
-    // Show app immediately, load data in background
-    const ls=document.getElementById('loginScreen');if(ls)ls.style.display='none';
-    applyUserRole();
-    // Navigate to dashboard
-    const dashNav=document.querySelector('[data-page=dashboard]');
-    if(dashNav){
-      document.querySelectorAll('.ni').forEach(i=>i.classList.remove('active'));
-      dashNav.classList.add('active');
-      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-      const dp=document.getElementById('page-dashboard');if(dp)dp.classList.add('active');
-      document.getElementById('pgTitle').textContent='لوحة التحكم';
-    }
-    // Add logout button
-    if(!document.getElementById('logoutBtn')){
-      const d=document.createElement('div');d.id='logoutBtn';
-      d.style.cssText='position:fixed;bottom:14px;left:10px;z-index:500';
-      d.innerHTML='<button onclick="doLogout()" style="background:rgba(239,68,68,0.12);color:var(--err);border:1px solid rgba(239,68,68,0.25);padding:8px 14px;border-radius:10px;font-family:Cairo,sans-serif;font-size:12px;font-weight:700;cursor:pointer">🚪 خروج</button>';
-      document.body.appendChild(d);
-    }
-    // Load data in background
-    refreshAll().catch(e=>console.error('refreshAll error:',e));
-    loadOrderNum();
-    startClock();
+    currentUser = savedUser;
+    const ls=document.getElementById('loginScreen');
+    if(ls)ls.style.display='none';
+    enterApp();
     return;
   }
   
-  // No session - show login directly
-  const loginScr=document.getElementById('loginScreen');
-  if(loginScr)loginScr.style.display='flex';
+  // No session - show login
+  const ls=document.getElementById('loginScreen');
+  if(ls)ls.style.display='flex';
 });
 
 
