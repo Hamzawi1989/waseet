@@ -1043,6 +1043,9 @@ async function doLogin(){
   if(btn){ btn.textContent='جاري التحقق...'; btn.disabled=true; }
   
   try {
+    // Ensure SB is initialized
+    if(!SB) initSB(SUPABASE_URL, SUPABASE_KEY);
+    
     // 1. Check admin credentials
     if(email === ADMIN_EMAIL && pass === ADMIN_PASS){
       currentUser = { role:'admin', name:'المدير العام', email:ADMIN_EMAIL, branchId:null, branchName:'الإدارة العامة' };
@@ -1052,7 +1055,6 @@ async function doLogin(){
     }
     
     // 2. Check branch credentials from DB
-    // Search by email (case-insensitive) - try ilike for case insensitivity
     const {data:branches, error} = await SB.from('branches')
       .select('id,name,email,password_hash,city,status');
     
@@ -1132,19 +1134,31 @@ function clearSession(){
 }
 
 async function enterApp(){
+  // Hide auth screens
   const ls=document.getElementById('loginScreen');
   const ld=document.getElementById('loadingScreen');
   const cs=document.getElementById('configScreen');
   if(ls)ls.style.display='none';
   if(cs)cs.style.display='none';
-  if(ld)ld.style.display='flex';
+  if(ld)ld.style.display='none';
+  
+  // Apply role UI
   applyUserRole();
-  try{
-    await bootApp();
-  }catch(e){
-    console.error('bootApp error:',e);
-    if(ld)ld.innerHTML='<div style="color:#ef4444;font-size:13px;padding:20px;text-align:center;max-width:300px">❌ خطأ في التحميل: '+e.message+'<br><br><button onclick="location.reload()" style="background:#d4a017;color:#000;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;font-family:Cairo,sans-serif">🔄 إعادة المحاولة</button></div>';
-  }
+  
+  // Go to dashboard
+  document.querySelectorAll('.ni').forEach(function(i){i.classList.remove('active');});
+  const dn=document.querySelector('[data-page=dashboard]');
+  if(dn)dn.classList.add('active');
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  const dp=document.getElementById('page-dashboard');
+  if(dp)dp.classList.add('active');
+  const pt=document.getElementById('pgTitle');
+  if(pt)pt.textContent='لوحة التحكم';
+  
+  // Load data
+  startClock();
+  refreshAll().catch(function(e){console.error('Data error:',e);});
+  loadOrderNum().catch(function(){});
 }
 
 function applyUserRole(){
