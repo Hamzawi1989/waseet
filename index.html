@@ -1884,8 +1884,8 @@ async function viewOrder(id){
   } else {
     agHtml='<div class="odr"><span class="odl">المندوب</span><span class="odv" style="color:var(--txt3)">لم يُعين بعد</span></div>';
   }
-  const contentRow=o.content?'<div class="odr"><span class="odl">المحتوى</span><span class="odv">'+o.content+'</span></div>':""
-  const optRow=o.options?'<div class="odr"><span class="odl">خيارات</span><span class="odv">'+o.options+'</span></div>':""
+  const contentRow=o.content?'<div class="odr"><span class="odl">المحتوى</span><span class="odv">'+o.content+'</span></div>':'';
+  const optRow=o.options?'<div class="odr"><span class="odl">خيارات</span><span class="odv">'+o.options+'</span></div>':'';
   let body='';
   body+='<div style="background:var(--goldbg);border:1px solid var(--goldborder);border-radius:11px;padding:14px;margin-bottom:14px;text-align:center">';
   body+='<div style="font-family:Tajawal,sans-serif;font-weight:800;font-size:28px;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">#'+num+'</div>';
@@ -3193,6 +3193,18 @@ function startClock(){
 //  INIT
 // ════════════════════════════════════════
 window.addEventListener('DOMContentLoaded',async()=>{
+  // Global error handler
+  window.onerror = function(msg, src, line, col, err){
+    console.error('JS Error:', msg, 'Line:', line);
+    const ld = document.getElementById('loadingScreen');
+    if(ld && ld.style.display !== 'none'){
+      ld.innerHTML = '<div style="color:#ef4444;font-size:14px;padding:20px;text-align:center">'
+        + '❌ خطأ في التطبيق<br><small style="color:#999">'+msg+'</small>'
+        + '<br><br><button onclick="location.reload()" style="background:#d4a017;color:#000;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;font-family:Cairo,sans-serif">🔄 إعادة المحاولة</button>'
+        + '</div>';
+    }
+    return false;
+  };
   window._cities=[];window._branches=[];
   document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');}));
   document.getElementById('cdlg')?.addEventListener('click',e=>{if(e.target===document.getElementById('cdlg'))closeCnf();});
