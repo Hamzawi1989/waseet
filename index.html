@@ -313,7 +313,7 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
         onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"
         onkeydown="if(event.key==='Enter')doLogin()">
     </div>
-    <button onclick="doLogin()" id="loginBtn"
+    <button onclick="console.log('BTN CLICKED');doLogin()" id="loginBtn"
       style="width:100%;background:linear-gradient(135deg,var(--gold3),var(--gold));color:var(--bg);border:none;padding:14px;border-radius:12px;font-family:'Cairo',sans-serif;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(212,160,23,0.25);transition:all .2s">
       🔐 تسجيل الدخول
     </button>
@@ -1009,7 +1009,8 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
   </div>
 </div>
 
-<script>
+<script>console.log('WASEET JS OK');
+
 // ════════════════════════════════════════
 //  GLOBALS
 // ════════════════════════════════════════
