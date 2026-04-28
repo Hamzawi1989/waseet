@@ -3336,154 +3336,94 @@ function renderBranchDirectory(){
 
 function printShippingLabel(orderId){
   const o = CACHE.orders.find(x=>x.id===orderId);
-  if(!o) return;
+  if(!o){ toast('❌ لم يتم العثور على الشحنة','err'); return; }
   
   const merchant = CACHE.merchants.find(m=>m.id===o.merchant_id);
   const orderNum = String(o.order_number||0).padStart(6,'0');
-  const barcode = 'WST'+orderNum;
   
-  // Build QR code data (for agent app scanning)
-  // QR code contains order number + recipient phone for agent app
-  const qrData = barcode + '|' + (o.phone||'') + '|' + (o.recipient||'');
+  // Build HTML parts using concatenation (no nested templates)
+  let recipientExtra = '';
+  if(o.phone2) recipientExtra += '<div class="sec-phone">📞 ' + o.phone2 + ' (احتياطي)</div>';
+  if(o.address) recipientExtra += '<div class="sec-sub">🏠 ' + o.address + '</div>';
   
-  // Create print window
-  const w = window.open('','_blank','width=400,height=600');
-  if(!w) { toast('⚠️ السماح بالنوافذ المنبثقة لطباعة الملصق','warn'); return; }
+  let merchantPhone = '';
+  if(merchant && merchant.phone) merchantPhone = '<div class="sec-phone">📞 ' + merchant.phone + '</div>';
   
-  w.document.write(`<!DOCTYPE html>
-<html dir="rtl" lang="ar">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ملصق شحنة #${orderNum}</title>
-<scr"+"ipt src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:'Cairo',Tahoma,sans-serif;background:#fff;color:#000;padding:0;direction:rtl}
-  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
-  @media print{
-    body{padding:0;margin:0}
-    .no-print{display:none!important}
-    .label{box-shadow:none!important;margin:0!important;border-radius:0!important}
-  }
-  .label{
-    width:100mm;min-height:150mm;border:2px solid #000;border-radius:6px;
-    margin:10px auto;padding:0;overflow:hidden;background:#fff;
-    box-shadow:0 4px 20px rgba(0,0,0,.2);
-  }
-  /* Header */
-  .hdr{background:#000;color:#d4a017;padding:10px 12px;display:flex;align-items:center;justify-content:space-between}
-  .hdr-logo{font-size:22px;font-weight:900;letter-spacing:2px;font-family:Tahoma}
-  .hdr-ar{font-size:16px;font-weight:800;color:#f0c040}
-  .hdr-sub{font-size:9px;color:#999;margin-top:1px}
-  .order-num{background:#d4a017;color:#000;padding:8px 12px;text-align:center;font-size:18px;font-weight:900;letter-spacing:1px;border-bottom:2px solid #000}
-  /* Sections */
-  .sec{padding:8px 12px;border-bottom:1.5px solid #000}
-  .sec-title{font-size:9px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
-  .sec-main{font-size:14px;font-weight:800;margin-bottom:2px}
-  .sec-sub{font-size:11px;color:#333}
-  .sec-phone{font-size:13px;font-weight:700;color:#000;direction:ltr;text-align:right}
-  /* Barcode/QR */
-  .code-sec{padding:10px 12px;text-align:center;background:#f9f9f9}
-  .barcode-num{font-size:13px;font-weight:700;letter-spacing:3px;margin-top:5px;font-family:monospace}
-  /* Footer */
-  .ftr{background:#000;color:#d4a017;padding:6px 12px;font-size:9px;display:flex;justify-content:space-between;align-items:center}
-  /* Amount */
-  .amount-box{background:#d4a017;color:#000;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #000}
-  .amount-label{font-size:10px;font-weight:700}
-  .amount-val{font-size:18px;font-weight:900}
-  /* Print btn */
-  .print-btn{display:block;width:calc(100% - 20px);margin:10px auto;padding:12px;background:#000;color:#d4a017;border:none;border-radius:6px;font-family:Cairo,sans-serif;font-size:16px;font-weight:700;cursor:pointer;text-align:center}
-  .print-btn:hover{background:#222}
-  #qrcode{display:inline-block}
-  #qrcode img,#qrcode canvas{width:90px!important;height:90px!important}
-</style>
+  let contentHtml = '';
+  if(o.content) contentHtml = '<div class="sec"><div class="sec-title">📋 المحتوى</div><div class="sec-sub">' + o.content + (o.qty&&o.qty>1?' × '+o.qty:'') + '</div></div>';
+  
+  let optionsHtml = '';
+  if(o.options) optionsHtml = '<div class="sec"><div class="sec-title">⚠️ تعليمات</div><div class="sec-sub">' + o.options + '</div></div>';
+  
+  const merchantName = merchant ? merchant.name : (o.merchant_name||'—');
+  const today = new Date().toLocaleDateString('ar-LY');
+  
+  const html = '<!DOCTYPE html><html dir="rtl" lang="ar"><head>'
+    + '<meta charset="UTF-8">'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+    + '<title>ملصق #' + orderNum + '</title>'
+    + '<link rel="preconnect" href="https://fonts.googleapis.com">'
+    + '<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800;900&display=swap" rel="stylesheet">'
+    + '<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><' + '/script>'
+    + '<style>'
+    + '*{margin:0;padding:0;box-sizing:border-box}'
+    + 'body{font-family:Cairo,Tahoma,sans-serif;background:#fff;direction:rtl}'
+    + '@media print{.no-print{display:none!important}.label{box-shadow:none!important;margin:0!important}}'
+    + '.label{width:100mm;min-height:150mm;border:2px solid #000;border-radius:6px;margin:8px auto;overflow:hidden;background:#fff;box-shadow:0 4px 20px rgba(0,0,0,.2)}'
+    + '.hdr{background:#000;color:#d4a017;padding:10px 12px;display:flex;align-items:center;justify-content:space-between}'
+    + '.hdr-logo{font-size:22px;font-weight:900;letter-spacing:2px}'
+    + '.hdr-ar{font-size:16px;font-weight:800;color:#f0c040}'
+    + '.order-num{background:#d4a017;color:#000;padding:8px 12px;text-align:center;font-size:18px;font-weight:900;border-bottom:2px solid #000}'
+    + '.sec{padding:8px 12px;border-bottom:1.5px solid #000}'
+    + '.sec-title{font-size:9px;font-weight:700;color:#666;margin-bottom:5px}'
+    + '.sec-main{font-size:14px;font-weight:800;margin-bottom:2px}'
+    + '.sec-sub{font-size:11px;color:#333}'
+    + '.sec-phone{font-size:13px;font-weight:700;direction:ltr;text-align:right}'
+    + '.code-sec{padding:10px;text-align:center;background:#f9f9f9}'
+    + '.barcode-num{font-size:13px;font-weight:700;letter-spacing:3px;margin-top:5px;font-family:monospace}'
+    + '.amount-box{background:#d4a017;color:#000;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #000}'
+    + '.ftr{background:#000;color:#d4a017;padding:6px 12px;font-size:9px;display:flex;justify-content:space-between}'
+    + '.print-btn{display:block;width:calc(100% - 20px);margin:10px auto;padding:12px;background:#000;color:#d4a017;border:none;border-radius:6px;font-family:Cairo,sans-serif;font-size:16px;font-weight:700;cursor:pointer}'
+    + '#qrcode img,#qrcode canvas{width:90px!important;height:90px!important}'
+    + '</style></head><body>'
 
-</head>
-<body>
-<div class="label" id="labelToPrint">
-  <!-- Header -->
-  <div class="hdr">
-    <div>
-      <div class="hdr-logo">WASEET</div>
-      <div class="hdr-ar">وسيط للتوصيل</div>
-    </div>
-    <div style="text-align:left">
-      <div style="font-size:9px;color:#999">رقم الشحنة</div>
-      <div style="font-size:14px;font-weight:800;color:#f0c040">#${orderNum}</div>
-    </div>
-  </div>
+```
++ '<div class="label">'
++ '<div class="hdr"><div><div class="hdr-logo">WASEET</div><div class="hdr-ar">وسيط للتوصيل</div></div>'
++ '<div style="text-align:left"><div style="font-size:9px;color:#999">رقم الشحنة</div><div style="font-size:14px;font-weight:800;color:#f0c040">#' + orderNum + '</div></div></div>'
++ '<div class="order-num">📦 #' + orderNum + '</div>'
++ '<div class="sec"><div class="sec-title">📍 بيانات المستلم</div>'
++ '<div class="sec-main">' + (o.recipient||'—') + '</div>'
++ '<div class="sec-phone">📞 ' + (o.phone||'—') + '</div>'
++ recipientExtra
++ '<div class="sec-sub">📌 ' + (o.city||'') + (o.area?' - '+o.area:'') + '</div></div>'
++ '<div class="sec"><div class="sec-title">🏪 بيانات المتجر</div>'
++ '<div class="sec-main">' + merchantName + '</div>'
++ merchantPhone + '</div>'
++ '<div class="amount-box"><div style="font-size:10px;font-weight:700">💰 المبلغ عند التسليم</div>'
++ '<div style="font-size:18px;font-weight:900">' + (+o.amount||0).toLocaleString() + ' د.ل</div></div>'
++ '<div class="code-sec"><div id="qrcode"></div>'
++ '<div class="barcode-num">WST-' + orderNum + '</div>'
++ '<div style="font-size:9px;color:#666;margin-top:3px">امسح لعرض تفاصيل الشحنة</div></div>'
++ contentHtml
++ optionsHtml
++ '<div class="ftr"><span>وسيط للتوصيل · WASEET</span><span>' + today + '</span></div>'
++ '</div>'
++ '<button class="print-btn no-print" onclick="window.print()">🖨️ طباعة الملصق</button>'
++ '<sc'+'ript>'
++ 'window.onload=function(){'
++ 'new QRCode(document.getElementById("qrcode"),{text:"WST-' + orderNum + '",width:90,height:90,colorDark:"#000",colorLight:"#fff"});'
++ 'setTimeout(function(){window.print();},1200);'
++ '};'
++ '</sc'+'ript>'
++ '</body></html>';
+```
 
-  <!-- Order Number Banner -->
-
-  <div class="order-num">📦 #${orderNum}</div>
-
-  <!-- Recipient -->
-
-  <div class="sec">
-    <div class="sec-title">📍 بيانات المستلم</div>
-    <div class="sec-main">${o.recipient||'—'}</div>
-    <div class="sec-phone">📞 ${o.phone||'—'}</div>
-    ${o.phone2?`<div class="sec-phone">📞 ${o.phone2} (احتياطي)</div>`:''}
-    <div class="sec-sub">📌 ${o.city||''} ${o.area?'- '+o.area:''}</div>
-    ${o.address?`<div class="sec-sub">🏠 ${o.address}</div>`:''}
-  </div>
-
-  <!-- Merchant -->
-
-  <div class="sec">
-    <div class="sec-title">🏪 بيانات المتجر</div>
-    <div class="sec-main">${merchant?.name||o.merchant_name||'—'}</div>
-    ${(merchant?.phone||'')?`<div class="sec-phone">📞 ${merchant.phone}</div>`:''}
-  </div>
-
-  <!-- Amount -->
-
-  <div class="amount-box">
-    <div class="amount-label">💰 المبلغ عند التسليم</div>
-    <div class="amount-val">${(+o.amount||0).toLocaleString()} د.ل</div>
-  </div>
-
-  <!-- QR Code -->
-
-  <div class="code-sec">
-    <div id="qrcode" data-qr="WST-${orderNum}"></div>
-    <div class="barcode-num">WST-${orderNum}</div>
-    <div style="font-size:9px;color:#666;margin-top:3px">امسح لعرض تفاصيل الشحنة</div>
-  </div>
-
-  <!-- Content & Options -->
-
-${o.content?`<div class="sec"><div class="sec-title">📋 المحتوى</div><div class="sec-sub">${o.content}${o.qty&&o.qty>1?' × '+o.qty:''}</div></div>`:’’}
-${o.options?`<div class="sec"><div class="sec-title">⚠️ تعليمات</div><div class="sec-sub">${o.options}</div></div>`:’’}
-
-  <!-- Footer -->
-
-  <div class="ftr">
-    <span>وسيط للتوصيل · WASEET</span>
-    <span>${new Date().toLocaleDateString('ar-LY')}</span>
-  </div>
-</div>
-
-<button class="print-btn no-print" onclick="window.print();setTimeout(()=>window.close(),500)">
-  🖨️ طباعة الملصق
-</button>
-
-<scr”+“ipt>
-// Generate QR Code
-new QRCode(document.getElementById(‘qrcode’), {
-text: ‘${barcode}’,
-width: 90, height: 90,
-colorDark: ‘#000000’, colorLight: ‘#ffffff’,
-correctLevel: QRCode.CorrectLevel.M
-});
-// Auto print
-setTimeout(()=>{ window.print(); },800);
-</script>
-
-</body>
-</html>`);
-  w.document.close();
+const w = window.open(’’,’_blank’,‘width=420,height=650’);
+if(!w){ toast(‘⚠️ السماح بالنوافذ المنبثقة لطباعة الملصق’,‘warn’); return; }
+w.document.open();
+w.document.write(html);
+w.document.close();
 }
 
 </script>
