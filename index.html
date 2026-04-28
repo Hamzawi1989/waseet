@@ -1014,6 +1014,8 @@ label.active-opt{background:var(–goldbg)!important;border-color:var(–gold)!i
 //  GLOBALS
 // ════════════════════════════════════════
 let SB = null;
+const _SB_URL='https://pddcqpsqveyzxpxnruha.supabase.co';
+const _SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkZGNxcHNxdmV5enhweG5ydWhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMjY1MDcsImV4cCI6MjA5MjcwMjUwN30.y5WuF_qeTmMLqinPojvt5CYKuGOvL6VbDjQfLv2I9wQ';
 let CACHE = { orders:[], merchants:[], agents:[], pricing:[], notifications:[] };
 let DB = { nextOrderNum: 1 };
 let _currentPricingBranch = '';
@@ -1031,72 +1033,58 @@ const ADMIN_EMAIL = 'admin@waseet.ly';
 const ADMIN_PASS  = 'waseet2024admin';
 
 async function doLogin(){
-  const email = (document.getElementById('loginEmail')?.value||'').trim().toLowerCase();
-  const pass  = (document.getElementById('loginPass')?.value||'').trim();
+  const emailEl = document.getElementById('loginEmail');
+  const passEl  = document.getElementById('loginPass');
+  const email = emailEl ? emailEl.value.trim().toLowerCase() : '';
+  const pass  = passEl  ? passEl.value.trim() : '';
   
-  if(!email||!pass){
+  if(!email || !pass){
     showLoginError('أدخل البريد الإلكتروني وكلمة المرور');
     return;
   }
   
   const btn = document.getElementById('loginBtn');
-  if(btn){ btn.textContent='جاري التحقق...'; btn.disabled=true; }
+  if(btn){ btn.textContent = 'جاري...'; btn.disabled = true; }
   
+  // Admin check - instant, no network
+  if(email === 'admin@waseet.ly' && pass === 'waseet2024admin'){
+    currentUser = {role:'admin', name:'المدير العام', email:'admin@waseet.ly', branchId:null, branchName:''};
+    try{ saveSession(currentUser); }catch(e){}
+    enterApp();
+    return;
+  }
+  
+  // Branch check - needs network
   try {
-    // Ensure SB is initialized
-    if(!SB) initSB(SUPABASE_URL, SUPABASE_KEY);
-    
-    // 1. Check admin credentials
-    if(email === ADMIN_EMAIL && pass === ADMIN_PASS){
-      currentUser = { role:'admin', name:'المدير العام', email:ADMIN_EMAIL, branchId:null, branchName:'الإدارة العامة' };
-      saveSession(currentUser);
-      await enterApp();
-      return;
-    }
-    
-    // 2. Check branch credentials from DB
-    const {data:branches, error} = await SB.from('branches')
-      .select('id,name,email,password_hash,city,status');
-    
-    if(error) throw error;
-    
-    if(branches && branches.length > 0){
-      // Case-insensitive email match + exact password match
-      const branch = branches.find(b => 
-        b.email?.toLowerCase().trim() === email &&
-        b.password_hash === pass
-      );
-      if(branch){
-        if(branch.status !== 'active'){
-          showLoginError('هذا الفرع موقوف — تواصل مع المدير العام');
-          return;
-        }
-        currentUser = { 
-          role:'branch',
-          branchId: String(branch.id||''),
-          branchName: String(branch.name||''),
-          email: String(branch.email||''),
-          name: 'مدير '+String(branch.name||''),
-          city: String(branch.city||'')
-        };
-        saveSession(currentUser);
-        await enterApp();
+    if(!SB) initSB(_SB_URL, _SB_KEY);
+    const res = await SB.from('branches').select('id,name,email,password_hash,city,status');
+    const branches = res.data || [];
+    const branch = branches.find(function(b){
+      return (b.email||'').toLowerCase().trim() === email && b.password_hash === pass;
+    });
+    if(branch){
+      if(branch.status !== 'active'){
+        showLoginError('هذا الفرع موقوف');
+        if(btn){btn.textContent='🔐 تسجيل الدخول';btn.disabled=false;}
         return;
       }
+      currentUser = {
+        role:'branch',
+        branchId: String(branch.id||''),
+        branchName: String(branch.name||''),
+        email: String(branch.email||''),
+        name: 'مدير ' + String(branch.name||''),
+        city: String(branch.city||'')
+      };
+      try{ saveSession(currentUser); }catch(e){}
+      enterApp();
+      return;
     }
-    
-    // Debug: show how many branches were found
-    const foundCount = branches ? branches.length : 0;
-    if(foundCount === 0){
-      showLoginError('لم يتم العثور على حساب بهذا البريد — تحقق من البريد الإلكتروني');
-    } else {
-      showLoginError('كلمة المرور غير صحيحة — تحقق من كلمة المرور');
-    }
-  } catch(e){
-    showLoginError('خطأ في الاتصال: '+e.message);
-  } finally {
-    if(btn){ btn.textContent='🔐 تسجيل الدخول'; btn.disabled=false; }
+    showLoginError('البريد أو كلمة المرور غير صحيحة');
+  } catch(e) {
+    showLoginError('خطأ: ' + (e.message||String(e)));
   }
+  if(btn){btn.textContent='🔐 تسجيل الدخول';btn.disabled=false;}
 }
 
 function showLoginError(msg){
@@ -1133,7 +1121,7 @@ function clearSession(){
   currentUser = null;
 }
 
-async function enterApp(){
+function enterApp(){
   // Hide auth screens
   const ls=document.getElementById('loginScreen');
   const ld=document.getElementById('loadingScreen');
@@ -1249,8 +1237,8 @@ function filterByBranch(items, branchField='branch_id'){
 // ════════════════════════════════════════
 function getSavedConfig(){
   return {
-    url: localStorage.getItem('wb_url')||'https://pddcqpsqveyzxpxnruha.supabase.co',
-    key: localStorage.getItem('wb_key')||'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkZGNxcHNxdmV5enhweG5ydWhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMjY1MDcsImV4cCI6MjA5MjcwMjUwN30.y5WuF_qeTmMLqinPojvt5CYKuGOvL6VbDjQfLv2I9wQ'
+    url: localStorage.getItem('wb_url')||_SB_URL,
+    key: localStorage.getItem('wb_key')||_SB_KEY
   };
 }
 
@@ -3232,9 +3220,8 @@ window.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('cdlg')?.addEventListener('click',e=>{if(e.target===document.getElementById('cdlg'))closeCnf();});
   if(window.innerWidth<=1200&&window.innerWidth>900){const sb=document.getElementById('sidebar');if(sb)sb.classList.add('collapsed');}
   
-  // Init Supabase immediately - no waiting
-  const {url,key}=getSavedConfig();
-  initSB(url,key);
+  // Init Supabase immediately
+  initSB(_SB_URL, _SB_KEY);
   
   // Hide loading immediately
   const ldScr=document.getElementById('loadingScreen');
