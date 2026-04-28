@@ -1034,10 +1034,12 @@ const ADMIN_EMAIL = 'admin@waseet.ly';
 const ADMIN_PASS  = 'waseet2024admin';
 
 async function doLogin(){
+  console.log('doLogin START');
   const emailEl = document.getElementById('loginEmail');
   const passEl  = document.getElementById('loginPass');
   const email = emailEl ? emailEl.value.trim().toLowerCase() : '';
   const pass  = passEl  ? passEl.value.trim() : '';
+  console.log('email:', email, 'pass length:', pass.length);
   
   if(!email || !pass){
     showLoginError('أدخل البريد الإلكتروني وكلمة المرور');
@@ -1048,17 +1050,22 @@ async function doLogin(){
   if(btn){ btn.textContent = 'جاري...'; btn.disabled = true; }
   
   // Admin check - instant, no network
+  console.log('checking admin:', email === 'admin@waseet.ly');
   if(email === 'admin@waseet.ly' && pass === 'waseet2024admin'){
+    console.log('ADMIN LOGIN OK');
     currentUser = {role:'admin', name:'المدير العام', email:'admin@waseet.ly', branchId:null, branchName:''};
-    try{ saveSession(currentUser); }catch(e){}
-    enterApp();
+    try{ saveSession(currentUser); console.log('session saved'); }catch(e){ console.error('saveSession error:',e); }
+    try{ enterApp(); console.log('enterApp called'); }catch(e){ console.error('enterApp error:',e); }
     return;
   }
   
-  // Branch check - needs network
+  // Branch check
+  console.log('checking branch...');
   try {
-    if(!SB) initSB(_SB_URL, _SB_KEY);
+    if(!SB){ console.log('init SB'); initSB(_SB_URL, _SB_KEY); }
+    console.log('SB ready, querying branches...');
     const res = await SB.from('branches').select('id,name,email,password_hash,city,status');
+    console.log('branches result:', res.data ? res.data.length : 'null', 'error:', res.error);
     const branches = res.data || [];
     const branch = branches.find(function(b){
       return (b.email||'').toLowerCase().trim() === email && b.password_hash === pass;
@@ -1077,12 +1084,13 @@ async function doLogin(){
         name: 'مدير ' + String(branch.name||''),
         city: String(branch.city||'')
       };
-      try{ saveSession(currentUser); }catch(e){}
-      enterApp();
+      try{ saveSession(currentUser); }catch(e){ console.error('saveSession error:',e); }
+      try{ enterApp(); }catch(e){ console.error('enterApp error:',e); }
       return;
     }
     showLoginError('البريد أو كلمة المرور غير صحيحة');
   } catch(e) {
+    console.error('doLogin catch:', e);
     showLoginError('خطأ: ' + (e.message||String(e)));
   }
   if(btn){btn.textContent='🔐 تسجيل الدخول';btn.disabled=false;}
@@ -1123,30 +1131,23 @@ function clearSession(){
 }
 
 function enterApp(){
-  // Hide auth screens
-  const ls=document.getElementById('loginScreen');
-  const ld=document.getElementById('loadingScreen');
-  const cs=document.getElementById('configScreen');
-  if(ls)ls.style.display='none';
-  if(cs)cs.style.display='none';
-  if(ld)ld.style.display='none';
-  
-  // Apply role UI
+  console.log('enterApp START, currentUser:', currentUser && currentUser.role);
+  ['loginScreen','loadingScreen','configScreen'].forEach(function(id){
+    const el=document.getElementById(id);
+    if(el){ el.style.display='none'; console.log('hidden:', id); }
+  });
   applyUserRole();
-  
-  // Go to dashboard
   document.querySelectorAll('.ni').forEach(function(i){i.classList.remove('active');});
   const dn=document.querySelector('[data-page=dashboard]');
-  if(dn)dn.classList.add('active');
+  if(dn){ dn.classList.add('active'); console.log('dashboard nav active'); }
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   const dp=document.getElementById('page-dashboard');
-  if(dp)dp.classList.add('active');
+  if(dp){ dp.classList.add('active'); console.log('dashboard page active'); }
   const pt=document.getElementById('pgTitle');
-  if(pt)pt.textContent='لوحة التحكم';
-  
-  // Load data
+  if(pt) pt.textContent='لوحة التحكم';
   startClock();
-  refreshAll().catch(function(e){console.error('Data error:',e);});
+  console.log('enterApp DONE - loading data...');
+  refreshAll().catch(function(e){console.error('refreshAll error:',e);});
   loadOrderNum().catch(function(){});
 }
 
