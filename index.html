@@ -1132,19 +1132,19 @@ function clearSession(){
 }
 
 async function enterApp(){
-  // Hide all auth screens
-  const ls = document.getElementById('loginScreen');
-  const ld = document.getElementById('loadingScreen');
-  const cs = document.getElementById('configScreen');
-  if(ls) ls.style.display='none';
-  if(cs) cs.style.display='none';
-  if(ld) ld.style.display='flex';
-  
-  // Apply role-based UI
+  const ls=document.getElementById('loginScreen');
+  const ld=document.getElementById('loadingScreen');
+  const cs=document.getElementById('configScreen');
+  if(ls)ls.style.display='none';
+  if(cs)cs.style.display='none';
+  if(ld)ld.style.display='flex';
   applyUserRole();
-  
-  // Load all data
-  await bootApp();
+  try{
+    await bootApp();
+  }catch(e){
+    console.error('bootApp error:',e);
+    if(ld)ld.innerHTML='<div style="color:#ef4444;font-size:13px;padding:20px;text-align:center;max-width:300px">❌ خطأ في التحميل: '+e.message+'<br><br><button onclick="location.reload()" style="background:#d4a017;color:#000;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;font-family:Cairo,sans-serif">🔄 إعادة المحاولة</button></div>';
+  }
 }
 
 function applyUserRole(){
@@ -3193,6 +3193,14 @@ function startClock(){
 //  INIT
 // ════════════════════════════════════════
 window.addEventListener('DOMContentLoaded',async()=>{
+  // Catch ALL errors
+  window.addEventListener('unhandledrejection',function(e){
+    console.error('Unhandled promise rejection:',e.reason);
+    const ld=document.getElementById('loadingScreen');
+    if(ld&&ld.style.display!=='none'){
+      ld.innerHTML='<div style="color:#ef4444;font-size:13px;padding:20px;text-align:center;max-width:300px">❌ خطأ: '+(e.reason&&e.reason.message||String(e.reason))+'<br><br><button onclick="location.reload()" style="background:#d4a017;color:#000;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;font-family:Cairo,sans-serif">🔄 إعادة المحاولة</button></div>';
+    }
+  });
   // Global error handler
   window.onerror = function(msg, src, line, col, err){
     console.error('JS Error:', msg, 'Line:', line);
