@@ -1245,7 +1245,12 @@ function initSB(url, key){
 }
 
 async function testConn(){
-  try { const {error} = await SB.from('merchants').select('id').limit(1); return !error; }
+  try {
+    const timeout = new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),5000));
+    const query = SB.from('merchants').select('id').limit(1);
+    const {error} = await Promise.race([query, timeout]);
+    return !error;
+  }
   catch(e){ return false; }
 }
 
@@ -3442,7 +3447,7 @@ function printShippingLabel(orderId){
   <!-- QR Code -->
 
   <div class="code-sec">
-    <div id="qrcode" data-qr="WST-${orderNum}-${(o.phone||"").replace(/\D/g,"")}"></div>
+    <div id="qrcode" data-qr="WST-${orderNum}"></div>
     <div class="barcode-num">WST-${orderNum}</div>
     <div style="font-size:9px;color:#666;margin-top:3px">امسح لعرض تفاصيل الشحنة</div>
   </div>
