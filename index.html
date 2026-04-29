@@ -981,53 +981,80 @@ function doLogin(){
   var btn=document.getElementById('loginBtn');
   hideLoginError();
   if(!email||!pass){showLoginError('أدخل البريد الإلكتروني وكلمة المرور');return;}
-  if(btn){btn.textContent='⏳ جاري...';btn.disabled=true;}
+  btn.textContent='⏳ جاري...';
+  btn.disabled=true;
 
-  // Admin login
+  // Admin hardcoded - instant
   if(email==='admin@waseet.ly'&&pass==='waseet2024admin'){
     currentUser={role:'admin',name:'المدير العام',email:'admin@waseet.ly',branchId:null,branchName:''};
     saveSession(currentUser);enterApp();return;
   }
 
-  if(!SB)initSB(_SB_URL,_SB_KEY);
-  if(!SB){showLoginError('❌ فشل تهيئة الاتصال');resetBtn(btn);return;}
+  // Direct fetch to Supabase REST - no wrapper, no client, no issues
+  var HEADERS={
+    'apikey':_SB_KEY,
+    'Authorization':'Bearer '+_SB_KEY,
+    'Content-Type':'application/json'
+  };
 
-  // Branch login
-  SB.from('branches').select('id,name,email,password_hash,city,status').then(function(res){
-    var branches=(res.data)||[];
+  fetch(_SB_URL+'/rest/v1/branches?select=id,name,email,password_hash,city,status',{
+    method:'GET',headers:HEADERS
+  })
+  .then(function(r){return r.json();})
+  .then(function(branches){
+    if(!Array.isArray(branches)){
+      // Supabase returned error object
+      showLoginError('❌ خطأ قاعدة البيانات: '+(branches.message||JSON.stringify(branches)));
+      btn.textContent='🔐 تسجيل الدخول';btn.disabled=false;return;
+    }
+    // Search branch
     var found=null;
     for(var i=0;i<branches.length;i++){
-      if((branches[i].email||'').toLowerCase().trim()===email&&(branches[i].password_hash||'')=== pass){found=branches[i];break;}
+      if((branches[i].email||'').toLowerCase().trim()===email&&(branches[i].password_hash||'')===pass){
+        found=branches[i];break;
+      }
     }
     if(found){
-      if(found.status==='inactive'||found.status==='suspended'){showLoginError('🚫 هذا الفرع موقوف');resetBtn(btn);return;}
-      currentUser={role:'branch',branchId:String(found.id),branchName:String(found.name||''),email:String(found.email||''),name:'مدير '+String(found.name||''),city:String(found.city||'')};
+      currentUser={role:'branch',branchId:String(found.id),branchName:String(found.name||''),
+        email:String(found.email||''),name:'مدير '+String(found.name||''),city:String(found.city||'')};
       saveSession(currentUser);enterApp();return;
     }
-    // Not a branch — try merchant
-    SB.from('merchants').select('id,name,phone,email,password_hash,branch_id,city,status').then(function(mres){
-      var merchants=(mres.data)||[];
+    // Try merchants
+    fetch(_SB_URL+'/rest/v1/merchants?select=id,name,phone,email,password_hash,branch_id,city,status',{
+      method:'GET',headers:HEADERS
+    })
+    .then(function(r){return r.json();})
+    .then(function(merchants){
+      if(!Array.isArray(merchants)){
+        showLoginError('❌ البريد أو كلمة المرور غير صحيحة\nعدد الفروع: '+branches.length);
+        btn.textContent='🔐 تسجيل الدخول';btn.disabled=false;return;
+      }
       var foundM=null;
       for(var j=0;j<merchants.length;j++){
         var m=merchants[j];
-        var mPhone=(m.phone||'').replace(/\s/g,'');
-        var mEmail=(m.email||'').toLowerCase().trim();
-        var mPass=(m.password_hash||'');
-        if((mEmail===email||mPhone===email)&&mPass===pass){foundM=m;break;}
+        if(((m.email||'').toLowerCase()===email||(m.phone||'')===email)&&(m.password_hash||'')===pass){
+          foundM=m;break;
+        }
       }
       if(foundM){
-        currentUser={role:'merchant',merchantId:String(foundM.id),name:foundM.name||'تاجر',email:email,branchId:String(foundM.branch_id||''),city:String(foundM.city||'')};
+        currentUser={role:'merchant',merchantId:String(foundM.id),name:foundM.name||'تاجر',
+          email:email,branchId:String(foundM.branch_id||''),city:String(foundM.city||'')};
         saveSession(currentUser);enterApp();return;
       }
-      // Nothing matched
-      var hint='';
-      if(res.error)hint=' (DB: '+res.error.message+')';
-      showLoginError('❌ البريد أو كلمة المرور غير صحيحة'+hint+'\nجرب أداة «عرض الفروع» أدناه');
-      resetBtn(btn);
-    }).catch(function(e){showLoginError('❌ خطأ: '+e.message);resetBtn(btn);});
-  }).catch(function(e){showLoginError('❌ خطأ في الاتصال: '+e.message);resetBtn(btn);});
+      showLoginError('❌ البريد أو كلمة المرور غير صحيحة\nالفروع: '+branches.length+' | التجار: '+merchants.length);
+      btn.textContent='🔐 تسجيل الدخول';btn.disabled=false;
+    })
+    .catch(function(e){
+      showLoginError('❌ خطأ شبكة: '+e.message);
+      btn.textContent='🔐 تسجيل الدخول';btn.disabled=false;
+    });
+  })
+  .catch(function(e){
+    showLoginError('❌ لا يمكن الاتصال بالخادم: '+e.message);
+    btn.textContent='🔐 تسجيل الدخول';btn.disabled=false;
+  });
 }
-function resetBtn(btn){if(btn){btn.textContent='🔐 تسجيل الدخول';btn.disabled=false;}}
+
 function showLoginError(msg){var el=document.getElementById('loginError');if(el){el.textContent=msg;el.style.display='block';el.style.whiteSpace='pre-line';}}
 function hideLoginError(){var el=document.getElementById('loginError');if(el)el.style.display='none';}
 function saveSession(u){try{localStorage.setItem('wb_user',JSON.stringify(u));localStorage.setItem('wb_ut',Date.now());}catch(e){}}
@@ -1082,6 +1109,35 @@ console.log('SB OK');
     return true;
   }catch(e){console.error('initSB fail:',e);return false;}
 }
+async function testConn(){try{var r=await SB.from('merchants').select('id').limit(1);return!r.error;}catch(e){return false;}}
+function dbg(msg){var el=document.getElementById('debugOut');if(!el)return;el.style.display='block';el.textContent+=msg+'\n';el.scrollTop=el.scrollHeight;}
+
+function testDBConn(){
+  var el=document.getElementById('debugOut');if(el){el.style.display='block';el.textContent='';}
+  dbg('🔄 اختبار الاتصال...');
+  dbg('URL: '+_SB_URL);
+  fetch(_SB_URL+'/rest/v1/branches?select=id,name,email,password_hash,status&limit=20',{
+    method:'GET',
+    headers:{'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY}
+  }).then(function(r){
+    dbg('HTTP Status: '+r.status);
+    return r.json();
+  }).then(function(data){
+    if(Array.isArray(data)){
+      dbg('✅ متصل! عدد الفروع: '+data.length);
+      data.forEach(function(b,i){
+        dbg((i+1)+'. '+b.name+' | '+b.email+' | pass: '+(b.password_hash||'(فارغة)')+' | '+b.status);
+      });
+      if(!data.length)dbg('⚠️ لا توجد فروع! سجّل كـ admin وأضف فرعاً أولاً');
+    }else{
+      dbg('❌ خطأ: '+JSON.stringify(data));
+      dbg('تلميح: تحقق من RLS Policy في Supabase → Authentication → Policies');
+    }
+  }).catch(function(e){dbg('❌ فشل الاتصال: '+e.message);});
+}
+
+function listBranches(){testDBConn();}
+
 async function testConn(){try{var r=await SB.from('merchants').select('id').limit(1);return!r.error;}catch(e){return false;}}
 function dbg(msg){var el=document.getElementById('debugOut');if(!el)return;el.style.display='block';el.textContent+=msg+'
 ';el.scrollTop=el.scrollHeight;}
