@@ -344,14 +344,14 @@ select.fi2{appearance:none;cursor:pointer;}
     <div id="loginError" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--err);text-align:center"></div>
     <div style="margin-bottom:12px">
       <label style="font-size:10px;color:var(--txt3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">البريد الإلكتروني</label>
-      <input id="loginEmail" type="email" placeholder="admin@waseet.ly"
+      <input id="loginEmail" type="text" placeholder="admin@waseet.ly" autocomplete="username" autocorrect="off" autocapitalize="none" spellcheck="false"
         style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--txt);padding:12px 14px;border-radius:11px;font-family:'Cairo',sans-serif;font-size:14px;outline:none;transition:border-color .2s"
         oninput="hideLoginError()" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"
         onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
     </div>
     <div style="margin-bottom:20px">
       <label style="font-size:10px;color:var(--txt3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">كلمة المرور</label>
-      <input id="loginPass" type="password" placeholder="••••••••"
+      <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password" autocorrect="off" autocapitalize="none"
         style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--txt);padding:12px 14px;border-radius:11px;font-family:'Cairo',sans-serif;font-size:14px;outline:none;transition:border-color .2s"
         oninput="hideLoginError()" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"
         onkeydown="if(event.key==='Enter')doLogin()">
@@ -988,6 +988,7 @@ function doLogin(){
   var HARDCODED=[
     {email:'admin@waseet.ly',  pass:'waseet2024admin', role:'admin',  name:'المدير العام',    branchId:null, branchName:''},
     {email:'main@waseet.ly',   pass:'waseet2024',      role:'branch', name:'الفرع الرئيسي',   branchId:'auto', branchName:'الفرع الرئيسي - طرابلس'},
+    {email:'bello898989@gmail.com', pass:'Amoremio8992', role:'branch', name:'زليتن مدينة', branchId:'auto', branchName:'زليتن مدينة'},
   ];
   for(var h=0;h<HARDCODED.length;h++){
     if(HARDCODED[h].email===email&&HARDCODED[h].pass===pass){
