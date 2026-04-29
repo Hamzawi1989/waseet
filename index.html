@@ -5,7 +5,103 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WASEET — نظام إدارة التوصيل</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ── Supabase REST Client (no CDN, avoids GitHub Pages CSP issues) ──
+var supabase = (function(){
+  function createClient(url, key){
+    var _url = url.replace(/\/$/, '');
+    var _key = key;
+    function headers(extra){
+      var h = {'apikey': _key, 'Authorization': 'Bearer ' + _key, 'Content-Type': 'application/json', 'Prefer': 'return=representation'};
+      return Object.assign(h, extra||{});
+    }
+    function buildQuery(table, opts){
+      var q = _url + '/rest/v1/' + table;
+      var params = [];
+      if(opts.select) params.push('select=' + encodeURIComponent(opts.select));
+      if(opts.filters) opts.filters.forEach(function(f){ params.push(f); });
+      if(opts.order) params.push('order=' + opts.order);
+      if(opts.limit) params.push('limit=' + opts.limit);
+      if(opts.offset) params.push('offset=' + opts.offset);
+      if(params.length) q += '?' + params.join('&');
+      return q;
+    }
+    function Table(name){
+      var _opts = {select:'*', filters:[], order:null, limit:null, offset:null, _single:false};
+      var _method = 'GET';
+      var _body = null;
+      var t = {
+        select: function(s){ _opts.select = s; _method='GET'; return t; },
+        order: function(col, o){ _opts.order = col + '.' + ((o&&o.ascending===false)?'desc':'asc'); return t; },
+        limit: function(n){ _opts.limit = n; return t; },
+        eq: function(col, val){ _opts.filters.push(col + '=eq.' + encodeURIComponent(String(val))); return t; },
+        neq: function(col, val){ _opts.filters.push(col + '=neq.' + encodeURIComponent(String(val))); return t; },
+        ilike: function(col, val){ _opts.filters.push(col + '=ilike.*' + encodeURIComponent(val) + '*'); return t; },
+        single: function(){ _opts._single = true; return t; },
+        insert: function(data){ _method='POST'; _body=data; return t; },
+        upsert: function(data){ _method='POST'; _body=data; return t; },
+        update: function(data){ _method='PATCH'; _body=data; return t; },
+        delete: function(){ _method='DELETE'; return t; },
+        then: function(cb){ return t._run().then(cb); },
+        catch: function(cb){ return t._run().catch(cb); },
+        _run: async function(){
+          try{
+            var q = buildQuery(name, _opts);
+            var h = headers();
+            if(_opts._single) h['Accept'] = 'application/vnd.pgrst.object+json';
+            if(_method !== 'DELETE') h['Prefer'] = 'return=representation';
+            var fetchOpts = {method: _method, headers: h};
+            if(_body !== null) fetchOpts.body = JSON.stringify(_body);
+            var r = await fetch(q, fetchOpts);
+            if(_method === 'DELETE') return {data:null, error: r.ok?null:{message:'Delete failed '+r.status}};
+            if(r.status === 204) return {data: null, error: null};
+            var body = await r.json();
+            if(!r.ok) return {data: _opts._single?null:[], error:{message: (body&&body.message)||body||('HTTP '+r.status), code: r.status}};
+            return {data: body, error: null};
+          }catch(e){ return {data: _opts._single?null:[], error:{message:e.message}}; }
+        }
+      };
+      return new Proxy(t, {
+        get: function(target, prop){
+          if(prop === 'then') return function(res, rej){ return target._run().then(res, rej); };
+          if(prop === 'catch') return function(rej){ return target._run().catch(rej); };
+          return target[prop];
+        }
+      });
+    }
+    function insert(table, data){ return _mutation('POST', table, data); }
+    function update(table, data, filters){
+      var q = _url + '/rest/v1/' + table;
+      if(filters && filters.length) q += '?' + filters.join('&');
+      return fetch(q, {method:'PATCH', headers: headers({'Prefer':'return=representation'}), body: JSON.stringify(data)})
+        .then(function(r){ return r.json().then(function(b){ return r.ok?{data:b,error:null}:{data:null,error:{message:b.message||JSON.stringify(b)}}; }); })
+        .catch(function(e){ return {data:null,error:{message:e.message}}; });
+    }
+    function _mutation(method, table, data){
+      return fetch(_url + '/rest/v1/' + table, {method:method, headers: headers({'Prefer':'return=representation'}), body: JSON.stringify(data)})
+        .then(function(r){ return r.json().then(function(b){ 
+          if(!r.ok) return {data:null,error:{message:(Array.isArray(b)?b[0]:b).message||JSON.stringify(b)}};
+          return {data: Array.isArray(b)?b[0]:b, error:null};
+        }); })
+        .catch(function(e){ return {data:null,error:{message:e.message}}; });
+    }
+    function del(table, filters){
+      var q = _url + '/rest/v1/' + table;
+      if(filters && filters.length) q += '?' + filters.join('&');
+      return fetch(q, {method:'DELETE', headers: headers()})
+        .then(function(r){ return {data:null, error: r.ok?null:{message:'Delete failed: '+r.status}}; })
+        .catch(function(e){ return {data:null,error:{message:e.message}}; });
+    }
+    return {
+      from: function(name){ return Table(name); },
+      channel: function(){ return { on: function(){ return { subscribe: function(){} }; } }; },
+      _url: _url,
+      _key: _key
+    };
+  }
+  return { createClient: createClient };
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -273,14 +369,14 @@ select.fi2{appearance:none;cursor:pointer;}
       <label style="font-size:10px;color:var(--txt3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">البريد الإلكتروني</label>
       <input id="loginEmail" type="email" placeholder="admin@waseet.ly"
         style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--txt);padding:12px 14px;border-radius:11px;font-family:'Cairo',sans-serif;font-size:14px;outline:none;transition:border-color .2s"
-        onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"
+        oninput="hideLoginError()" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"
         onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
     </div>
     <div style="margin-bottom:20px">
       <label style="font-size:10px;color:var(--txt3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">كلمة المرور</label>
       <input id="loginPass" type="password" placeholder="••••••••"
         style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--txt);padding:12px 14px;border-radius:11px;font-family:'Cairo',sans-serif;font-size:14px;outline:none;transition:border-color .2s"
-        onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"
+        oninput="hideLoginError()" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"
         onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <button id="loginBtn" onclick="doLogin()"
@@ -288,6 +384,16 @@ select.fi2{appearance:none;cursor:pointer;}
       🔐 تسجيل الدخول
     </button>
     <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--txt3)">نظام WASEET — محمي بكلمة مرور</div>
+    <!-- Debug tool -->
+    <div style="margin-top:14px;padding:10px;background:rgba(0,0,0,0.3);border-radius:10px;border:1px solid rgba(255,255,255,0.05)">
+      <div style="font-size:10px;color:var(--txt3);margin-bottom:6px;text-align:center">🔧 أدوات التشخيص</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
+        <button onclick="testDBConn()" style="background:rgba(59,130,246,0.15);color:var(--info);border:1px solid rgba(59,130,246,0.3);padding:5px 10px;border-radius:7px;font-family:Cairo,sans-serif;font-size:10px;cursor:pointer">🔍 اختبار الاتصال</button>
+        <button onclick="listBranches()" style="background:rgba(212,160,23,0.1);color:var(--gold);border:1px solid var(--goldborder);padding:5px 10px;border-radius:7px;font-family:Cairo,sans-serif;font-size:10px;cursor:pointer">📋 عرض الفروع</button>
+        <button onclick="clearSession();location.reload()" style="background:rgba(239,68,68,0.1);color:var(--err);border:1px solid rgba(239,68,68,0.2);padding:5px 10px;border-radius:7px;font-family:Cairo,sans-serif;font-size:10px;cursor:pointer">🗑️ مسح الجلسة</button>
+      </div>
+      <div id="debugOut" style="font-size:10px;color:var(--txt2);margin-top:8px;display:none;background:rgba(0,0,0,0.4);padding:8px;border-radius:7px;max-height:150px;overflow-y:auto;text-align:right;direction:rtl;white-space:pre-wrap;font-family:monospace"></div>
+    </div>
   </div>
 </div>
 
@@ -892,32 +998,82 @@ var _chatMessages=[];
 // ════════════════════════════════════════
 //  AUTH — ✅ FIXED login button
 // ════════════════════════════════════════
-function doLogin(){
+async function doLogin(){
   var email=(document.getElementById('loginEmail').value||'').trim().toLowerCase();
   var pass=(document.getElementById('loginPass').value||'').trim();
   var btn=document.getElementById('loginBtn');
+  hideLoginError();
   if(!email||!pass){showLoginError('أدخل البريد الإلكتروني وكلمة المرور');return;}
-  if(btn){btn.textContent='جاري...';btn.disabled=true;}
+  if(btn){btn.textContent='⏳ جاري...';btn.disabled=true;}
+
+  // ── 1) Admin hardcoded
   if(email==='admin@waseet.ly'&&pass==='waseet2024admin'){
     currentUser={role:'admin',name:'المدير العام',email:'admin@waseet.ly',branchId:null,branchName:''};
     saveSession(currentUser);enterApp();return;
   }
-  if(!SB)initSB(_SB_URL,_SB_KEY);
-  SB.from('branches').select('id,name,email,password_hash,city,status').then(function(res){
-    var branches=res.data||[];
-    var found=null;
-    for(var i=0;i<branches.length;i++){
-      if((branches[i].email||'').toLowerCase().trim()===email&&branches[i].password_hash===pass){found=branches[i];break;}
+
+  // ── 2) Init Supabase if needed
+  if(!SB){
+    var ok=initSB(_SB_URL,_SB_KEY);
+    if(!ok){showLoginError('❌ فشل تهيئة الاتصال — تحقق من الإنترنت');resetBtn(btn);return;}
+  }
+
+  try{
+    // ── 3) Try branch login (fetch ALL, compare locally — avoids RLS issues)
+    var res=await SB.from('branches').select('id,name,email,password_hash,city,status');
+    if(res.error){
+      // If RLS blocks, try with email filter
+      var res2=await SB.from('branches').select('id,name,email,password_hash,city,status').ilike('email',email);
+      if(res2.error){showLoginError('❌ خطأ في قاعدة البيانات: '+res2.error.message);resetBtn(btn);return;}
+      res={data:res2.data};
     }
-    if(found){
-      if(found.status!=='active'){showLoginError('هذا الفرع موقوف');resetBtn(btn);return;}
-      currentUser={role:'branch',branchId:String(found.id),branchName:String(found.name||''),email:String(found.email||''),name:'مدير '+String(found.name||''),city:String(found.city||'')};
-      saveSession(currentUser);enterApp();
-    }else{showLoginError('البريد أو كلمة المرور غير صحيحة');resetBtn(btn);}
-  }).catch(function(e){showLoginError('خطأ في الاتصال: '+(e.message||e));resetBtn(btn);});
+    var branches=res.data||[];
+    var foundBranch=null;
+    for(var i=0;i<branches.length;i++){
+      var be=(branches[i].email||'').toLowerCase().trim();
+      var bp=(branches[i].password_hash||'').trim();
+      if(be===email&&bp===pass){foundBranch=branches[i];break;}
+    }
+    if(foundBranch){
+      if(foundBranch.status==='inactive'||foundBranch.status==='suspended'){
+        showLoginError('🚫 هذا الفرع موقوف — تواصل مع المدير العام');resetBtn(btn);return;
+      }
+      currentUser={role:'branch',branchId:String(foundBranch.id),branchName:String(foundBranch.name||''),email:String(foundBranch.email||''),name:'مدير '+String(foundBranch.name||''),city:String(foundBranch.city||'')};
+      saveSession(currentUser);enterApp();return;
+    }
+
+    // ── 4) Try merchant login
+    var mRes=await SB.from('merchants').select('id,name,phone,password_hash,branch_id,city,status');
+    if(!mRes.error){
+      var merchants=mRes.data||[];
+      var foundMerchant=null;
+      for(var j=0;j<merchants.length;j++){
+        var me=(merchants[j].phone||'').trim();
+        var me2=(merchants[j].email||'').toLowerCase().trim();
+        var mp=(merchants[j].password_hash||'').trim();
+        // Match by phone OR email
+        if((me===email||me2===email||me===pass)&&mp===pass){foundMerchant=merchants[j];break;}
+        // Also try: email input is actually phone number
+        if(me===email.replace(/\s/g,'')&&mp===pass){foundMerchant=merchants[j];break;}
+      }
+      if(foundMerchant){
+        currentUser={role:'merchant',merchantId:String(foundMerchant.id),name:foundMerchant.name||'تاجر',email:email,branchId:String(foundMerchant.branch_id||''),city:String(foundMerchant.city||'')};
+        saveSession(currentUser);enterApp();return;
+      }
+    }
+
+    // ── 5) Nothing matched
+    showLoginError('❌ البريد الإلكتروني أو كلمة المرور غير صحيحة\nتأكد: admin@waseet.ly للمدير، أو بريد/هاتف الفرع');
+    resetBtn(btn);
+
+  }catch(e){
+    showLoginError('❌ خطأ في الاتصال: '+(e.message||String(e))+'\nتحقق من اتصال الإنترنت');
+    resetBtn(btn);
+  }
 }
 function resetBtn(btn){if(btn){btn.textContent='🔐 تسجيل الدخول';btn.disabled=false;}}
-function showLoginError(msg){var el=document.getElementById('loginError');if(el){el.textContent=msg;el.style.display='block';}}
+function showLoginError(msg){var el=document.getElementById('loginError');if(el){el.textContent=msg;el.style.display='block';el.style.whiteSpace='pre-line';}}
+function hideLoginError(){var el=document.getElementById('loginError');if(el)el.style.display='none';}
 function saveSession(u){try{localStorage.setItem('wb_user',JSON.stringify(u));localStorage.setItem('wb_ut',Date.now());}catch(e){}}
 function loadSession(){try{var s=localStorage.getItem('wb_user');if(!s)return null;var u=JSON.parse(s);if(Date.now()-(+localStorage.getItem('wb_ut')||0)>7*864e5){localStorage.removeItem('wb_user');return null;}return u;}catch(e){return null;}}
 function clearSession(){try{localStorage.removeItem('wb_user');}catch(e){}currentUser=null;}
@@ -940,7 +1096,8 @@ function applyUserRole(){
   if(!currentUser)return;
   var sav=document.querySelector('.sav');if(sav)sav.textContent=currentUser.name.charAt(0);
   var sn=document.querySelector('.si h4');if(sn)sn.textContent=currentUser.name;
-  var sr=document.querySelector('.si span');if(sr)sr.textContent=currentUser.role==='admin'?'مدير عام':'مدير فرع';
+  var roleLabel={admin:'مدير عام',branch:'مدير فرع',merchant:'تاجر'}[currentUser.role]||currentUser.role;
+  var sr=document.querySelector('.si span');if(sr)sr.textContent=roleLabel;
   if(!document.getElementById('logoutBtn')){
     var d=document.createElement('div');d.id='logoutBtn';d.style.cssText='position:fixed;bottom:14px;left:10px;z-index:500';
     d.innerHTML='<button onclick="doLogout()" style="background:rgba(239,68,68,0.12);color:var(--err);border:1px solid rgba(239,68,68,0.25);padding:8px 14px;border-radius:10px;font-family:Cairo,sans-serif;font-size:12px;font-weight:700;cursor:pointer">🚪 خروج</button>';
@@ -961,8 +1118,50 @@ function applyUserRole(){
 // ════════════════════════════════════════
 //  SUPABASE
 // ════════════════════════════════════════
-function initSB(url,key){try{SB=supabase.createClient(url,key);return true;}catch(e){return false;}}
+function initSB(url,key){
+  try{
+    SB=supabase.createClient(url,key);
+    // Monkey-patch SB to use proper REST calls
+console.log('SB OK');
+    return true;
+  }catch(e){console.error('initSB fail:',e);return false;}
+}
 async function testConn(){try{var r=await SB.from('merchants').select('id').limit(1);return!r.error;}catch(e){return false;}}
+function dbg(msg){var el=document.getElementById('debugOut');if(!el)return;el.style.display='block';el.textContent+=msg+'
+';el.scrollTop=el.scrollHeight;}
+async function testDBConn(){
+  var el=document.getElementById('debugOut');if(el){el.style.display='block';el.textContent='';}
+  dbg('🔄 بدء اختبار الاتصال...');
+  if(!SB){var ok=initSB(_SB_URL,_SB_KEY);dbg(ok?'✅ Supabase client جاهز':'❌ فشل إنشاء client');}
+  else dbg('✅ Supabase client موجود');
+  try{
+    var r=await SB.from('branches').select('id,name,email,status');
+    if(r.error)dbg('❌ branches: '+r.error.message+' ('+r.error.code+')');
+    else{dbg('✅ branches: '+(r.data||[]).length+' فرع');(r.data||[]).forEach(function(b){dbg('  • '+b.name+' | '+b.email+' | '+b.status);});}
+  }catch(e){dbg('❌ استثناء: '+e.message);}
+  try{
+    var r2=await SB.from('merchants').select('id,name,phone');
+    if(r2.error)dbg('❌ merchants: '+r2.error.message);
+    else dbg('✅ merchants: '+(r2.data||[]).length+' تاجر');
+  }catch(e){dbg('❌ '+e.message);}
+  dbg('──── URL: '+_SB_URL.slice(0,45)+'...');
+}
+async function listBranches(){
+  var el=document.getElementById('debugOut');if(el){el.style.display='block';el.textContent='';}
+  if(!SB)initSB(_SB_URL,_SB_KEY);
+  dbg('📋 الفروع المسجلة:');
+  try{
+    var r=await SB.from('branches').select('name,email,password_hash,status');
+    if(r.error){dbg('❌ '+r.error.message+'
+تلميح: تحقق من RLS Policy في Supabase');return;}
+    if(!(r.data||[]).length){dbg('⚠️ لا توجد فروع!
+سجّل دخولاً admin أولاً وأضف فرعاً.');return;}
+    (r.data||[]).forEach(function(b,i){dbg((i+1)+'. '+b.name+'
+   بريد: '+b.email+'
+   كلمة مرور: '+(b.password_hash||'(فارغة)')+'
+   حالة: '+b.status);});
+  }catch(e){dbg('❌ '+e.message);}
+}
 async function saveConfig(){
   var url=(document.getElementById('cfgUrl').value||'').trim();
   var key=(document.getElementById('cfgKey').value||'').trim();
@@ -1315,7 +1514,7 @@ async function submitOrder(){
   DB.nextOrderNum=orderNum+1;
   var branchId=currentUser?.role==='branch'?currentUser.branchId:(document.getElementById('oBranch')?.value||null);
   var newO={order_number:orderNum,merchant_id:merchant?.id||null,merchant_name:merchant?.name||'',branch_id:branchId,recipient:rec,phone:ph,phone2:document.getElementById('oPh2')?.value||'',address:(document.getElementById('oAddr')?.value||'').trim(),area:areaText,city:city,agent_id:null,agent_name:'',agent_phone:'',status:'waiting_approval',status_text:'انتظار موافقة',amount:+(document.getElementById('oProductPrice')?.value||0),fee:+(document.getElementById('oFee')?.value||0),fee_on:feeOn,content:document.getElementById('oContent')?.value||'',qty:+(document.getElementById('oQty')?.value||1),options:opts.join('، '),notes:document.getElementById('oNotes')?.value||''};
-  var {data,error}=await SB.from('orders').insert(newO).select().single();
+  var {data,error}=await SB.from('orders').insert(newO).single();
   if(error){toast('❌ خطأ: '+error.message,'err');return;}
   CACHE.orders.unshift(data);closeModal('newOrder');
   nav(document.querySelector('[data-page=orders]'));
@@ -1565,7 +1764,7 @@ async function doCopyPricing(){
   var gp=CACHE.pricing.filter(function(p){return!p.branch_id||p.branch_id===''||p.branch_id===null;});
   if(!gp.length){toast('⚠️ لا توجد أسعار عامة للنسخ','warn');return;}
   var ins=gp.map(function(p){return{area:p.area,price:p.price,city:p.city||'',branch_id:_currentPricingBranch};});
-  var {data,error}=await SB.from('pricing').insert(ins).select();
+  var {data,error}=await SB.from('pricing').insert(ins);
   if(error){toast('❌ '+error.message,'err');return;}
   CACHE.pricing=CACHE.pricing.concat(data||[]);renderPricingPage();toast('✅ تم نسخ '+((data||[]).length)+' منطقة!','ok');
 }
@@ -1586,7 +1785,7 @@ async function submitCity(){
   var name=(document.getElementById('cityName')?.value||'').trim();var region=document.getElementById('cityRegion')?.value||'غرب ليبيا';
   if(!name){toast('⚠️ أدخل اسم المدينة','warn');return;}
   var newCity={id:Date.now().toString(),name:name,region:region};
-  try{var {data,error}=await SB.from('cities').insert({name:name,region:region}).select().single();if(!error&&data)newCity=data;}catch(e){}
+  try{var {data,error}=await SB.from('cities').insert({name:name,region:region}).single();if(!error&&data)newCity=data;}catch(e){}
   window._cities=(window._cities||[]);window._cities.push(newCity);
   document.getElementById('cityName').value='';
   closeModal('newCity');refreshCityDropdowns();renderPricingPage();toast('✅ تمت إضافة المدينة "'+name+'"!','ok');
@@ -1595,7 +1794,7 @@ async function submitArea(){
   var name=(document.getElementById('areaName')?.value||'').trim();var price=+(document.getElementById('areaPrice')?.value||25);var city=document.getElementById('areaCity')?.value||'';
   if(!name){toast('⚠️ أدخل اسم المنطقة','warn');return;}
   if(!city){toast('⚠️ اختر المدينة أولاً','warn');return;}
-  var {data,error}=await SB.from('pricing').insert({area:name,price:price,city:city,branch_id:_currentPricingBranch||null}).select().single();
+  var {data,error}=await SB.from('pricing').insert({area:name,price:price,city:city,branch_id:_currentPricingBranch||null}).single();
   if(error){toast('❌ '+error.message,'err');return;}
   CACHE.pricing.push(data);renderPricingPage();closeModal('newArea');toast('✅ تمت إضافة "'+name+'"!','ok');
   document.getElementById('areaName').value='';document.getElementById('areaPrice').value='25';
@@ -1653,7 +1852,7 @@ function renderNotifications(){
   if(!CACHE.notifications.length){el.innerHTML='<div class="empty"><div>🔔</div><p>لا توجد إشعارات</p></div>';return;}
   el.innerHTML=CACHE.notifications.map(function(n){return'<div class="ni2 '+(n.is_read?'':'unread')+'" onclick="readNotif(\''+n.id+'\')"><div class="ni2-ico" style="background:'+(n.icon_bg||'rgba(212,160,23,.1)')+'">'+( n.icon||'🔔')+'</div><div class="ni-t"><h4>'+n.title+'</h4><span>'+timeAgo(n.created_at)+'</span></div>'+(n.is_read?'':'<div class="ni-dot"></div>')+'</div>';}).join('');
 }
-async function addNotif(icon,bg,title){try{var {data}=await SB.from('notifications').insert({icon:icon,icon_bg:bg,title:title,is_read:false}).select().single();if(data){CACHE.notifications.unshift(data);loadNotifications();}}catch(e){}}
+async function addNotif(icon,bg,title){try{var {data}=await SB.from('notifications').insert({icon:icon,icon_bg:bg,title:title,is_read:false}).single();if(data){CACHE.notifications.unshift(data);loadNotifications();}}catch(e){}}
 async function readNotif(id){await SB.from('notifications').update({is_read:true}).eq('id',id);var n=CACHE.notifications.find(function(x){return x.id===id;});if(n)n.is_read=true;renderNotifications();loadNotifications();}
 async function markAllRead(){await SB.from('notifications').update({is_read:true}).eq('is_read',false);CACHE.notifications.forEach(function(n){n.is_read=true;});renderNotifications();loadNotifications();toast('✅ تم تحديد الكل كمقروء','ok');}
 async function clearNotifs(){cnf('🗑️','حذف الإشعارات','حذف جميع الإشعارات؟',async function(){await SB.from('notifications').delete().neq('id','00000000-0000-0000-0000-000000000000');CACHE.notifications=[];renderNotifications();loadNotifications();toast('🗑️ تم الحذف');});}
@@ -1863,6 +2062,15 @@ upd();setInterval(upd,30000);
 // ════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════
+window.onerror = function(msg, src, line){
+console.error(‘JS Error:’, msg, src, line);
+var le = document.getElementById(‘loginError’);
+var ls = document.getElementById(‘loginScreen’);
+if(le && ls && ls.style.display !== ‘none’){
+le.textContent = ‘⚠️ خطأ: ’ + msg + ’ (سطر ’ + line + ‘)’;
+le.style.display = ‘block’;
+}
+};
 window.addEventListener(‘DOMContentLoaded’,function(){
 window._cities=[];window._branches=[];
 document.querySelectorAll(’.ov’).forEach(function(o){o.addEventListener(‘click’,function(e){if(e.target===o)o.classList.remove(‘show’);});});
