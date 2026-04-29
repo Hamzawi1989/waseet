@@ -6,100 +6,77 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WASEET — نظام إدارة التوصيل</title>
 <script>
-// ── Supabase REST Client (no CDN, avoids GitHub Pages CSP issues) ──
-var supabase = (function(){
-  function createClient(url, key){
-    var _url = url.replace(/\/$/, '');
-    var _key = key;
-    function headers(extra){
-      var h = {'apikey': _key, 'Authorization': 'Bearer ' + _key, 'Content-Type': 'application/json', 'Prefer': 'return=representation'};
-      return Object.assign(h, extra||{});
+// ── Supabase REST Client (no CDN, no Proxy, iOS Safari compatible) ──
+var supabase=(function(){
+  function createClient(url,key){
+    var U=url.replace(/\/$/,'');
+    function H(extra){
+      var h={'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json','Prefer':'return=representation'};
+      if(extra)Object.keys(extra).forEach(function(k){h[k]=extra[k];});
+      return h;
     }
-    function buildQuery(table, opts){
-      var q = _url + '/rest/v1/' + table;
-      var params = [];
-      if(opts.select) params.push('select=' + encodeURIComponent(opts.select));
-      if(opts.filters) opts.filters.forEach(function(f){ params.push(f); });
-      if(opts.order) params.push('order=' + opts.order);
-      if(opts.limit) params.push('limit=' + opts.limit);
-      if(opts.offset) params.push('offset=' + opts.offset);
-      if(params.length) q += '?' + params.join('&');
-      return q;
+    // Core fetch wrapper
+    function req(method,table,filters,body,single){
+      var q=U+'/rest/v1/'+table;
+      var p=filters?filters.filter(Boolean):[];
+      if(p.length)q+='?'+p.join('&');
+      var opts={method:method,headers:H(single?{'Accept':'application/vnd.pgrst.object+json'}:{})};
+      if(method==='DELETE')opts.headers['Prefer']='';
+      if(body!==undefined&&body!==null)opts.body=JSON.stringify(body);
+      return fetch(q,opts).then(function(r){
+        if(r.status===204)return{data:null,error:null};
+        return r.json().then(function(b){
+          if(!r.ok)return{data:null,error:{message:(b&&(b.message||b.hint||b.details))||('HTTP '+r.status),code:r.status}};
+          return{data:b,error:null};
+        });
+      }).catch(function(e){return{data:null,error:{message:e.message}};});
     }
-    function Table(name){
-      var _opts = {select:'*', filters:[], order:null, limit:null, offset:null, _single:false};
-      var _method = 'GET';
-      var _body = null;
-      var t = {
-        select: function(s){ _opts.select = s; _method='GET'; return t; },
-        order: function(col, o){ _opts.order = col + '.' + ((o&&o.ascending===false)?'desc':'asc'); return t; },
-        limit: function(n){ _opts.limit = n; return t; },
-        eq: function(col, val){ _opts.filters.push(col + '=eq.' + encodeURIComponent(String(val))); return t; },
-        neq: function(col, val){ _opts.filters.push(col + '=neq.' + encodeURIComponent(String(val))); return t; },
-        ilike: function(col, val){ _opts.filters.push(col + '=ilike.*' + encodeURIComponent(val) + '*'); return t; },
-        single: function(){ _opts._single = true; return t; },
-        insert: function(data){ _method='POST'; _body=data; return t; },
-        upsert: function(data){ _method='POST'; _body=data; return t; },
-        update: function(data){ _method='PATCH'; _body=data; return t; },
-        delete: function(){ _method='DELETE'; return t; },
-        then: function(cb){ return t._run().then(cb); },
-        catch: function(cb){ return t._run().catch(cb); },
-        _run: async function(){
-          try{
-            var q = buildQuery(name, _opts);
-            var h = headers();
-            if(_opts._single) h['Accept'] = 'application/vnd.pgrst.object+json';
-            if(_method !== 'DELETE') h['Prefer'] = 'return=representation';
-            var fetchOpts = {method: _method, headers: h};
-            if(_body !== null) fetchOpts.body = JSON.stringify(_body);
-            var r = await fetch(q, fetchOpts);
-            if(_method === 'DELETE') return {data:null, error: r.ok?null:{message:'Delete failed '+r.status}};
-            if(r.status === 204) return {data: null, error: null};
-            var body = await r.json();
-            if(!r.ok) return {data: _opts._single?null:[], error:{message: (body&&body.message)||body||('HTTP '+r.status), code: r.status}};
-            return {data: body, error: null};
-          }catch(e){ return {data: _opts._single?null:[], error:{message:e.message}}; }
-        }
+    // Builder — returns plain object (no Proxy)
+    function from(table){
+      var _sel='*',_flt=[],_ord=null,_lim=null,_single=false,_method='GET',_body=null;
+      var b={};
+      b.select=function(s){_sel=s;_method='GET';return b;};
+      b.eq=function(c,v){_flt.push(c+'=eq.'+encodeURIComponent(String(v)));return b;};
+      b.neq=function(c,v){_flt.push(c+'=neq.'+encodeURIComponent(String(v)));return b;};
+      b.ilike=function(c,v){_flt.push(c+'=ilike.*'+encodeURIComponent(v)+'*');return b;};
+      b.order=function(c,o){_ord=c+'.'+(o&&o.ascending===false?'desc':'asc');return b;};
+      b.limit=function(n){_lim=n;return b;};
+      b.single=function(){_single=true;return b;};
+      b.insert=function(d){_method='POST';_body=d;return b;};
+      b.upsert=function(d){_method='POST';_body=d;_flt.push('on_conflict=id');return b;};
+      b.update=function(d){_method='PATCH';_body=d;return b;};
+      b.delete=function(){_method='DELETE';return b;};
+      b.then=function(res,rej){return b._go().then(res,rej);};
+      b.catch=function(rej){return b._go().catch(rej);};
+      b._go=function(){
+        var p=[];
+        if(_method==='GET')p.push('select='+encodeURIComponent(_sel));
+        _flt.forEach(function(f){p.push(f);});
+        if(_ord)p.push('order='+_ord);
+        if(_lim)p.push('limit='+_lim);
+        var q=U+'/rest/v1/'+table;
+        if(p.length)q+='?'+p.join('&');
+        var hdrs={'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json'};
+        if(_method!=='DELETE')hdrs['Prefer']='return=representation';
+        if(_single)hdrs['Accept']='application/vnd.pgrst.object+json';
+        var opts={method:_method,headers:hdrs};
+        if(_body!==null&&_body!==undefined)opts.body=JSON.stringify(_body);
+        return fetch(q,opts).then(function(r){
+          if(r.status===204)return{data:null,error:null};
+          return r.json().then(function(d){
+            if(!r.ok)return{data:_single?null:[],error:{message:(d&&(d.message||d.hint||d.details))||('HTTP '+r.status),code:r.status}};
+            return{data:d,error:null};
+          });
+        }).catch(function(e){return{data:_single?null:[],error:{message:e.message}};});
       };
-      return new Proxy(t, {
-        get: function(target, prop){
-          if(prop === 'then') return function(res, rej){ return target._run().then(res, rej); };
-          if(prop === 'catch') return function(rej){ return target._run().catch(rej); };
-          return target[prop];
-        }
-      });
+      return b;
     }
-    function insert(table, data){ return _mutation('POST', table, data); }
-    function update(table, data, filters){
-      var q = _url + '/rest/v1/' + table;
-      if(filters && filters.length) q += '?' + filters.join('&');
-      return fetch(q, {method:'PATCH', headers: headers({'Prefer':'return=representation'}), body: JSON.stringify(data)})
-        .then(function(r){ return r.json().then(function(b){ return r.ok?{data:b,error:null}:{data:null,error:{message:b.message||JSON.stringify(b)}}; }); })
-        .catch(function(e){ return {data:null,error:{message:e.message}}; });
-    }
-    function _mutation(method, table, data){
-      return fetch(_url + '/rest/v1/' + table, {method:method, headers: headers({'Prefer':'return=representation'}), body: JSON.stringify(data)})
-        .then(function(r){ return r.json().then(function(b){ 
-          if(!r.ok) return {data:null,error:{message:(Array.isArray(b)?b[0]:b).message||JSON.stringify(b)}};
-          return {data: Array.isArray(b)?b[0]:b, error:null};
-        }); })
-        .catch(function(e){ return {data:null,error:{message:e.message}}; });
-    }
-    function del(table, filters){
-      var q = _url + '/rest/v1/' + table;
-      if(filters && filters.length) q += '?' + filters.join('&');
-      return fetch(q, {method:'DELETE', headers: headers()})
-        .then(function(r){ return {data:null, error: r.ok?null:{message:'Delete failed: '+r.status}}; })
-        .catch(function(e){ return {data:null,error:{message:e.message}}; });
-    }
-    return {
-      from: function(name){ return Table(name); },
-      channel: function(){ return { on: function(){ return { subscribe: function(){} }; } }; },
-      _url: _url,
-      _key: _key
+    return{
+      from:from,
+      channel:function(){return{on:function(){return{subscribe:function(){}};}};}
     };
   }
-  return { createClient: createClient };
+  return{createClient:createClient};
 })();
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
@@ -379,8 +356,8 @@ select.fi2{appearance:none;cursor:pointer;}
         oninput="hideLoginError()" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"
         onkeydown="if(event.key==='Enter')doLogin()">
     </div>
-    <button id="loginBtn" onclick="doLogin()"
-      style="width:100%;background:linear-gradient(135deg,var(--gold3),var(--gold));color:var(--bg);border:none;padding:14px;border-radius:12px;font-family:'Cairo',sans-serif;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(212,160,23,0.25);transition:all .2s">
+    <button id="loginBtn" onclick="doLogin()" type="button"
+      style="width:100%;background:linear-gradient(135deg,var(--gold3),var(--gold));color:var(--bg);border:none;padding:14px;border-radius:12px;font-family:'Cairo',sans-serif;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(212,160,23,0.25);transition:all .2s;-webkit-appearance:none;touch-action:manipulation">
       🔐 تسجيل الدخول
     </button>
     <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--txt3)">نظام WASEET — محمي بكلمة مرور</div>
@@ -996,9 +973,9 @@ var currentUser=null;
 var _chatMessages=[];
 
 // ════════════════════════════════════════
-//  AUTH — ✅ FIXED login button
+//  AUTH
 // ════════════════════════════════════════
-async function doLogin(){
+function doLogin(){
   var email=(document.getElementById('loginEmail').value||'').trim().toLowerCase();
   var pass=(document.getElementById('loginPass').value||'').trim();
   var btn=document.getElementById('loginBtn');
@@ -1006,70 +983,49 @@ async function doLogin(){
   if(!email||!pass){showLoginError('أدخل البريد الإلكتروني وكلمة المرور');return;}
   if(btn){btn.textContent='⏳ جاري...';btn.disabled=true;}
 
-  // ── 1) Admin hardcoded
+  // Admin login
   if(email==='admin@waseet.ly'&&pass==='waseet2024admin'){
     currentUser={role:'admin',name:'المدير العام',email:'admin@waseet.ly',branchId:null,branchName:''};
     saveSession(currentUser);enterApp();return;
   }
 
-  // ── 2) Init Supabase if needed
-  if(!SB){
-    var ok=initSB(_SB_URL,_SB_KEY);
-    if(!ok){showLoginError('❌ فشل تهيئة الاتصال — تحقق من الإنترنت');resetBtn(btn);return;}
-  }
+  if(!SB)initSB(_SB_URL,_SB_KEY);
+  if(!SB){showLoginError('❌ فشل تهيئة الاتصال');resetBtn(btn);return;}
 
-  try{
-    // ── 3) Try branch login (fetch ALL, compare locally — avoids RLS issues)
-    var res=await SB.from('branches').select('id,name,email,password_hash,city,status');
-    if(res.error){
-      // If RLS blocks, try with email filter
-      var res2=await SB.from('branches').select('id,name,email,password_hash,city,status').ilike('email',email);
-      if(res2.error){showLoginError('❌ خطأ في قاعدة البيانات: '+res2.error.message);resetBtn(btn);return;}
-      res={data:res2.data};
-    }
-    var branches=res.data||[];
-    var foundBranch=null;
+  // Branch login
+  SB.from('branches').select('id,name,email,password_hash,city,status').then(function(res){
+    var branches=(res.data)||[];
+    var found=null;
     for(var i=0;i<branches.length;i++){
-      var be=(branches[i].email||'').toLowerCase().trim();
-      var bp=(branches[i].password_hash||'').trim();
-      if(be===email&&bp===pass){foundBranch=branches[i];break;}
+      if((branches[i].email||'').toLowerCase().trim()===email&&(branches[i].password_hash||'')=== pass){found=branches[i];break;}
     }
-    if(foundBranch){
-      if(foundBranch.status==='inactive'||foundBranch.status==='suspended'){
-        showLoginError('🚫 هذا الفرع موقوف — تواصل مع المدير العام');resetBtn(btn);return;
-      }
-      currentUser={role:'branch',branchId:String(foundBranch.id),branchName:String(foundBranch.name||''),email:String(foundBranch.email||''),name:'مدير '+String(foundBranch.name||''),city:String(foundBranch.city||'')};
+    if(found){
+      if(found.status==='inactive'||found.status==='suspended'){showLoginError('🚫 هذا الفرع موقوف');resetBtn(btn);return;}
+      currentUser={role:'branch',branchId:String(found.id),branchName:String(found.name||''),email:String(found.email||''),name:'مدير '+String(found.name||''),city:String(found.city||'')};
       saveSession(currentUser);enterApp();return;
     }
-
-    // ── 4) Try merchant login
-    var mRes=await SB.from('merchants').select('id,name,phone,password_hash,branch_id,city,status');
-    if(!mRes.error){
-      var merchants=mRes.data||[];
-      var foundMerchant=null;
+    // Not a branch — try merchant
+    SB.from('merchants').select('id,name,phone,email,password_hash,branch_id,city,status').then(function(mres){
+      var merchants=(mres.data)||[];
+      var foundM=null;
       for(var j=0;j<merchants.length;j++){
-        var me=(merchants[j].phone||'').trim();
-        var me2=(merchants[j].email||'').toLowerCase().trim();
-        var mp=(merchants[j].password_hash||'').trim();
-        // Match by phone OR email
-        if((me===email||me2===email||me===pass)&&mp===pass){foundMerchant=merchants[j];break;}
-        // Also try: email input is actually phone number
-        if(me===email.replace(/\s/g,'')&&mp===pass){foundMerchant=merchants[j];break;}
+        var m=merchants[j];
+        var mPhone=(m.phone||'').replace(/\s/g,'');
+        var mEmail=(m.email||'').toLowerCase().trim();
+        var mPass=(m.password_hash||'');
+        if((mEmail===email||mPhone===email)&&mPass===pass){foundM=m;break;}
       }
-      if(foundMerchant){
-        currentUser={role:'merchant',merchantId:String(foundMerchant.id),name:foundMerchant.name||'تاجر',email:email,branchId:String(foundMerchant.branch_id||''),city:String(foundMerchant.city||'')};
+      if(foundM){
+        currentUser={role:'merchant',merchantId:String(foundM.id),name:foundM.name||'تاجر',email:email,branchId:String(foundM.branch_id||''),city:String(foundM.city||'')};
         saveSession(currentUser);enterApp();return;
       }
-    }
-
-    // ── 5) Nothing matched
-    showLoginError('❌ البريد الإلكتروني أو كلمة المرور غير صحيحة\nتأكد: admin@waseet.ly للمدير، أو بريد/هاتف الفرع');
-    resetBtn(btn);
-
-  }catch(e){
-    showLoginError('❌ خطأ في الاتصال: '+(e.message||String(e))+'\nتحقق من اتصال الإنترنت');
-    resetBtn(btn);
-  }
+      // Nothing matched
+      var hint='';
+      if(res.error)hint=' (DB: '+res.error.message+')';
+      showLoginError('❌ البريد أو كلمة المرور غير صحيحة'+hint+'\nجرب أداة «عرض الفروع» أدناه');
+      resetBtn(btn);
+    }).catch(function(e){showLoginError('❌ خطأ: '+e.message);resetBtn(btn);});
+  }).catch(function(e){showLoginError('❌ خطأ في الاتصال: '+e.message);resetBtn(btn);});
 }
 function resetBtn(btn){if(btn){btn.textContent='🔐 تسجيل الدخول';btn.disabled=false;}}
 function showLoginError(msg){var el=document.getElementById('loginError');if(el){el.textContent=msg;el.style.display='block';el.style.whiteSpace='pre-line';}}
@@ -2067,11 +2023,13 @@ console.error(‘JS Error:’, msg, src, line);
 var le = document.getElementById(‘loginError’);
 var ls = document.getElementById(‘loginScreen’);
 if(le && ls && ls.style.display !== ‘none’){
-le.textContent = ‘⚠️ خطأ: ’ + msg + ’ (سطر ’ + line + ‘)’;
+le.textContent = ‘⚠️ خطأ في البرنامج: ’ + (msg||’’) + ’ (سطر ’ + line + ‘)’;
 le.style.display = ‘block’;
 }
 };
 window.addEventListener(‘DOMContentLoaded’,function(){
+// Init Supabase immediately on page load
+initSB(_SB_URL, _SB_KEY);
 window._cities=[];window._branches=[];
 document.querySelectorAll(’.ov’).forEach(function(o){o.addEventListener(‘click’,function(e){if(e.target===o)o.classList.remove(‘show’);});});
 var cdlg=document.getElementById(‘cdlg’);if(cdlg)cdlg.addEventListener(‘click’,function(e){if(e.target===cdlg)closeCnf();});
