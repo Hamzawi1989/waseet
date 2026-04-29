@@ -1146,42 +1146,6 @@ function testDBConn(){
 
 function listBranches(){testDBConn();}
 
-async function testConn(){try{var r=await SB.from('merchants').select('id').limit(1);return!r.error;}catch(e){return false;}}
-function dbg(msg){var el=document.getElementById('debugOut');if(!el)return;el.style.display='block';el.textContent+=msg+'
-';el.scrollTop=el.scrollHeight;}
-async function testDBConn(){
-  var el=document.getElementById('debugOut');if(el){el.style.display='block';el.textContent='';}
-  dbg('🔄 بدء اختبار الاتصال...');
-  if(!SB){var ok=initSB(_SB_URL,_SB_KEY);dbg(ok?'✅ Supabase client جاهز':'❌ فشل إنشاء client');}
-  else dbg('✅ Supabase client موجود');
-  try{
-    var r=await SB.from('branches').select('id,name,email,status');
-    if(r.error)dbg('❌ branches: '+r.error.message+' ('+r.error.code+')');
-    else{dbg('✅ branches: '+(r.data||[]).length+' فرع');(r.data||[]).forEach(function(b){dbg('  • '+b.name+' | '+b.email+' | '+b.status);});}
-  }catch(e){dbg('❌ استثناء: '+e.message);}
-  try{
-    var r2=await SB.from('merchants').select('id,name,phone');
-    if(r2.error)dbg('❌ merchants: '+r2.error.message);
-    else dbg('✅ merchants: '+(r2.data||[]).length+' تاجر');
-  }catch(e){dbg('❌ '+e.message);}
-  dbg('──── URL: '+_SB_URL.slice(0,45)+'...');
-}
-async function listBranches(){
-  var el=document.getElementById('debugOut');if(el){el.style.display='block';el.textContent='';}
-  if(!SB)initSB(_SB_URL,_SB_KEY);
-  dbg('📋 الفروع المسجلة:');
-  try{
-    var r=await SB.from('branches').select('name,email,password_hash,status');
-    if(r.error){dbg('❌ '+r.error.message+'
-تلميح: تحقق من RLS Policy في Supabase');return;}
-    if(!(r.data||[]).length){dbg('⚠️ لا توجد فروع!
-سجّل دخولاً admin أولاً وأضف فرعاً.');return;}
-    (r.data||[]).forEach(function(b,i){dbg((i+1)+'. '+b.name+'
-   بريد: '+b.email+'
-   كلمة مرور: '+(b.password_hash||'(فارغة)')+'
-   حالة: '+b.status);});
-  }catch(e){dbg('❌ '+e.message);}
-}
 async function saveConfig(){
   var url=(document.getElementById('cfgUrl').value||'').trim();
   var key=(document.getElementById('cfgKey').value||'').trim();
