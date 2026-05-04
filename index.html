@@ -876,7 +876,7 @@ function loadSession(){try{var s=localStorage.getItem('wb_user');if(!s)return nu
 function clearSession(){try{localStorage.removeItem('wb_user');}catch(e){}currentUser=null;}
 function doLogout(){clearSession();location.reload();}
 
-function enterApp(){
+function _enterApp(){
   ['loginScreen','loadingScreen','configScreen'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
   applyUserRole();
   document.querySelectorAll('.ni').forEach(function(i){i.classList.remove('active');});
@@ -1738,41 +1738,84 @@ upd();setInterval(upd,30000);
 // ════════════════════════════════════════
 // error handler removed
 
-window.addEventListener(‘DOMContentLoaded’, function(){
-// فتح مباشر بدون تسجيل دخول
-var p = new URLSearchParams(window.location.search);
-var role = p.get(‘role’) || ‘admin’;
-var bid  = p.get(‘bid’)  || ‘’;
-var bn   = p.get(‘bn’)   ? decodeURIComponent(p.get(‘bn’)) : ‘’;
+window.addEventListener(‘DOMContentLoaded’,function(){
+var p=new URLSearchParams(window.location.search);
+var role=p.get(‘role’);
+var bid=p.get(‘bid’)||’’;
+var bn=p.get(‘bn’)?decodeURIComponent(p.get(‘bn’)):’’;
 
-if(role === ‘branch’ && bid){
-currentUser = {
-role:‘branch’,
-branchId: bid,
-branchName: bn || ‘فرع’,
-name: ’مدير ’ + (bn || ‘الفرع’),
-email: ‘’,
-city: ‘’
-};
-} else {
-// admin أو أي رابط بدون معاملات
-currentUser = {
-role:‘admin’,
-name:‘المدير العام’,
-email:‘admin@waseet.ly’,
-branchId: null,
-branchName: ‘’
-};
+if(role===‘admin’){
+currentUser={role:‘admin’,name:‘المدير العام’,email:‘admin@waseet.ly’,branchId:null,branchName:’’};
+_enterApp();return;
+}
+if(role===‘branch’&&bid){
+currentUser={role:‘branch’,branchId:bid,branchName:bn||‘فرع’,name:‘مدير ‘+(bn||‘الفرع’),email:’’,city:’’};
+_enterApp();return;
+}
+buildLoginScreen();
+});
+
+function buildLoginScreen(){
+var body=document.body;
+var ls=document.createElement(‘div’);
+ls.id=‘loginOv’;
+ls.style.cssText=‘position:fixed;inset:0;background:#080808;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;font-family:Cairo,sans-serif’;
+ls.innerHTML=’<div style="background:#111;border:1px solid rgba(212,160,23,.25);border-radius:20px;padding:36px;width:100%;max-width:420px">’
++’<div style="text-align:center;margin-bottom:28px">’
++’<div style="font-size:48px;margin-bottom:10px">🚚</div>’
++’<div style="font-size:26px;font-weight:900;color:#d4a017;letter-spacing:3px;margin-bottom:4px">WASEET</div>’
++’<div style="font-size:12px;color:#5a4a30">نظام إدارة التوصيل</div>’
++’</div>’
++’<div id="lErr" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:10px;margin-bottom:14px;font-size:13px;color:#ef4444;text-align:center"></div>’
++’<div style="margin-bottom:12px"><label style="display:block;font-size:10px;color:#5a4a30;font-weight:700;text-transform:uppercase;margin-bottom:5px">البريد الإلكتروني</label>’
++’<input id=“lEm” type=“text” autocorrect=“off” autocapitalize=“none” spellcheck=“false” placeholder=“admin@waseet.ly” ’
++‘style=“width:100%;background:#0a0a0a;border:1px solid rgba(212,160,23,.2);color:#f0e8d0;padding:12px 14px;border-radius:10px;font-size:14px;outline:none;-webkit-appearance:none”></div>’
++’<div style="margin-bottom:18px"><label style="display:block;font-size:10px;color:#5a4a30;font-weight:700;text-transform:uppercase;margin-bottom:5px">كلمة المرور</label>’
++’<input id=“lPw” type=“password” placeholder=”••••••••” ’
++‘style=“width:100%;background:#0a0a0a;border:1px solid rgba(212,160,23,.2);color:#f0e8d0;padding:12px 14px;border-radius:10px;font-size:14px;outline:none;-webkit-appearance:none”></div>’
++’<button id=“lBtn” type=“button” ’
++‘style=“width:100%;background:linear-gradient(135deg,#8a6800,#d4a017);color:#000;border:none;padding:14px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;-webkit-appearance:none;touch-action:manipulation”>’
++‘🔐 تسجيل الدخول</button>’
++’</div>’;
+body.appendChild(ls);
+document.getElementById(‘lBtn’).addEventListener(‘click’,doLogin);
+document.getElementById(‘lPw’).addEventListener(‘keydown’,function(e){if(e.key===‘Enter’)doLogin();});
+document.getElementById(‘lEm’).addEventListener(‘keydown’,function(e){if(e.key===‘Enter’)document.getElementById(‘lPw’).focus();});
 }
 
-// إخفاء أي شاشة تحميل وفتح التطبيق مباشرة
-[‘loginScreen’,‘loadingScreen’,‘configScreen’].forEach(function(id){
-var el = document.getElementById(id);
-if(el) el.style.display = ‘none’;
-});
+function doLogin(){
+var email=(document.getElementById(‘lEm’).value||’’).trim().toLowerCase();
+var pass=(document.getElementById(‘lPw’).value||’’).trim();
+var btn=document.getElementById(‘lBtn’);
+var err=document.getElementById(‘lErr’);
+if(err)err.style.display=‘none’;
+if(!email||!pass){if(err){err.textContent=‘أدخل البريد وكلمة المرور’;err.style.display=‘block’;}return;}
+btn.textContent=‘⏳ جاري…’;btn.disabled=true;
 
-enterApp();
+if(email===‘admin@waseet.ly’&&pass===‘waseet2024admin’){
+currentUser={role:‘admin’,name:‘المدير العام’,email:email,branchId:null,branchName:’’};
+document.getElementById(‘loginOv’).remove();
+_enterApp();return;
+}
+
+fetch(_SBU+’/rest/v1/branches?select=id,name,email,password_hash,city,status&email=eq.’+encodeURIComponent(email),
+{headers:{apikey:_SBK,‘Authorization’:‘Bearer ‘+_SBK}})
+.then(function(r){return r.json();})
+.then(function(rows){
+if(Array.isArray(rows)&&rows.length&&rows[0].password_hash===pass){
+var b=rows[0];
+currentUser={role:‘branch’,branchId:String(b.id),branchName:b.name||’’,name:‘مدير ‘+(b.name||’’),email:email,city:b.city||’’};
+document.getElementById(‘loginOv’).remove();
+_enterApp();return;
+}
+if(err){err.textContent=‘البريد أو كلمة المرور غير صحيحة’;err.style.display=‘block’;}
+btn.textContent=‘🔐 تسجيل الدخول’;btn.disabled=false;
+})
+.catch(function(e){
+if(err){err.textContent=’خطأ في الاتصال: ’+e.message;err.style.display=‘block’;}
+btn.textContent=‘🔐 تسجيل الدخول’;btn.disabled=false;
 });
+}
 </script>
 
 </body>
